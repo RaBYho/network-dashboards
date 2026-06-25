@@ -1,0 +1,37 @@
+# --- Environnements virtuels et dépendances ---
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Configuration et Identifiants (TRÈS IMPORTANT) ---
+# Ne jamais pousser vos mots de passe ou clés API !
+.env
+config.json
+credentials.json
+*.pem
+*.key
+
+# --- IDE et Editeurs (Fichiers de configuration utilisateur) ---
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# --- Fichiers de log et temporaires ---
+*.log
+*.tmp
+*.bak
+
+# --- Virtualisation et Build (Buildroot / QEMU) ---
+# Si vous utilisez Buildroot ou QEMU, excluez les binaires générés
+output/
+images/
+build/
+*.bin
+*.img
+
+# --- Systèmes de fichiers ---
+/network-dashboards/  # Si vous créez des dossiers de sortie spécifiques
