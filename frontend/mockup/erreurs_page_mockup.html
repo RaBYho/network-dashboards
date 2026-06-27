@@ -1,0 +1,250 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.dash{display:flex;min-height:700px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.sidebar{width:200px;flex-shrink:0;border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);padding:16px 0}
+.sidebar-title{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:0 16px 8px;letter-spacing:.04em}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:var(--color-text-secondary);cursor:pointer}
+.nav-item.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;border-right:2px solid #E24B4A}
+.nav-item i{font-size:16px;opacity:.7}
+.nav-item.active i{opacity:1;color:#E24B4A}
+.nav-sep{height:0.5px;background:var(--color-border-tertiary);margin:8px 16px}
+.main{flex:1;display:flex;flex-direction:column;background:var(--color-background-tertiary);min-width:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-title{font-size:15px;font-weight:500;color:var(--color-text-primary)}
+.content{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px}
+.card-title i{font-size:15px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.kpi-label{font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px}
+.kpi-value{font-size:20px;font-weight:500;color:var(--color-text-primary)}
+.kpi-unit{font-size:11px;color:var(--color-text-secondary);margin-left:2px}
+.kpi-sub{font-size:11px;color:var(--color-text-tertiary);margin-top:3px}
+.kpi-value.danger{color:#A32D2D}
+.kpi-value.warn{color:#BA7517}
+.kpi-value.ok{color:#0F6E56}
+.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{font-size:11px;padding:3px 10px;border-radius:20px;cursor:pointer;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);background:transparent}
+.pill.active{background:#FCEBEB;color:#791F1F;border-color:#F09595}
+.pill.active.warn{background:#FAEEDA;color:#633806;border-color:#FAC775}
+.pill.active.all{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-primary)}
+.search{flex:1;max-width:200px;font-size:12px;padding:4px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary)}
+.log-table{width:100%;border-collapse:collapse;font-size:12px}
+.log-table th{text-align:left;padding:6px 10px;font-size:11px;font-weight:500;color:var(--color-text-tertiary);border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)}
+.log-table td{padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:middle}
+.log-table tr:last-child td{border-bottom:none}
+.log-table tr:hover td{background:var(--color-background-secondary)}
+.badge-sev{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.sev-crit{background:#FCEBEB;color:#791F1F}
+.sev-warn{background:#FAEEDA;color:#633806}
+.sev-info{background:#E6F1FB;color:#0C447C}
+.badge-iface{font-size:10px;padding:2px 7px;border-radius:20px}
+.b-eth{background:#EEEDFE;color:#3C3489}
+.b-wlan{background:#E1F5EE;color:#085041}
+.b-all{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.ts{font-family:var(--font-mono);font-size:11px;color:var(--color-text-tertiary)}
+.err-msg{color:var(--color-text-primary)}
+.err-val{font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary)}
+.mini-bar{height:3px;border-radius:2px;margin-top:4px}
+.chart-mini{display:flex;align-items:flex-end;gap:3px;height:40px}
+.bar-col{flex:1;border-radius:2px 2px 0 0;min-height:2px}
+.pagination{display:flex;align-items:center;justify-content:space-between;padding-top:10px;font-size:12px;color:var(--color-text-tertiary)}
+</style>
+
+<h2 class="sr-only">Maquette de la page Erreurs</h2>
+
+<div class="dash">
+  <div class="sidebar">
+    <div class="sidebar-title">NAVIGATION</div>
+    <div class="nav-item"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Vue globale</div>
+    <div class="nav-item"><i class="ti ti-activity" aria-hidden="true"></i>Débit</div>
+    <div class="nav-item"><i class="ti ti-clock" aria-hidden="true"></i>Latence</div>
+    <div class="nav-item active"><i class="ti ti-alert-triangle" aria-hidden="true"></i>Erreurs</div>
+    <div class="nav-sep"></div>
+    <div class="sidebar-title">INTERFACES</div>
+    <div class="nav-item"><i class="ti ti-network" aria-hidden="true"></i>eth0</div>
+    <div class="nav-item"><i class="ti ti-wifi" aria-hidden="true"></i>wlan0</div>
+    <div class="nav-sep"></div>
+    <div class="nav-item"><i class="ti ti-settings" aria-hidden="true"></i>Paramètres</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <i class="ti ti-alert-triangle" style="font-size:16px;color:#E24B4A" aria-hidden="true"></i>
+        <span class="topbar-title">Erreurs & anomalies</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:5px"><i class="ti ti-download" style="font-size:13px" aria-hidden="true"></i> Export CSV</button>
+        <button style="font-size:12px;padding:4px 10px;display:flex;align-items:center;gap:5px"><i class="ti ti-trash" style="font-size:13px" aria-hidden="true"></i> Vider</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-circle-x" style="font-size:12px" aria-hidden="true"></i> Erreurs critiques</div>
+          <div class="kpi-value danger">3</div>
+          <div class="kpi-sub">dernières 24h</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-alert-circle" style="font-size:12px" aria-hidden="true"></i> Avertissements</div>
+          <div class="kpi-value warn">12</div>
+          <div class="kpi-sub">dernières 24h</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-packages" style="font-size:12px" aria-hidden="true"></i> Paquets perdus</div>
+          <div class="kpi-value warn">247</div>
+          <div class="kpi-sub">total cumulé</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-check" style="font-size:12px" aria-hidden="true"></i> Taux d'erreur</div>
+          <div class="kpi-value ok">0.8<span class="kpi-unit">%</span></div>
+          <div class="kpi-sub">dans les seuils</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i class="ti ti-chart-bar" aria-hidden="true"></i>Fréquence des erreurs — dernière heure</div>
+          <div style="display:flex;gap:10px;font-size:11px;color:var(--color-text-tertiary);align-items:center">
+            <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#E24B4A"></span>Critique</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#EF9F27"></span>Avertissement</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:4px;height:60px;padding:0 2px">
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px;align-items:stretch;height:100%;justify-content:flex-end">
+            <div style="height:8%;background:#EF9F27;border-radius:2px 2px 0 0"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px;height:100%;justify-content:flex-end"><div style="height:5%;background:#EF9F27;border-radius:2px 2px 0 0"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px;height:100%;justify-content:flex-end"><div style="height:12%;background:#EF9F27;border-radius:2px 2px 0 0"></div></div>
+          <div style="flex:1;height:100%;justify-content:flex-end;display:flex;flex-direction:column;gap:2px"><div style="height:6%;background:#EF9F27;border-radius:2px 2px 0 0"></div></div>
+          <div style="flex:1;height:100%;justify-content:flex-end;display:flex;flex-direction:column;gap:2px"><div style="height:40%;background:#E24B4A;border-radius:2px 2px 0 0"></div></div>
+          <div style="flex:1;height:100%;justify-content:flex-end;display:flex;flex-direction:column;gap:2px"><div style="height:10%;background:#EF9F27;border-radius:2px 2px 0 0"></div></div>
+          <div style="flex:1;height:100%;justify-content:flex-end;display:flex;flex-direction:column;gap:2px"><div style="height:5%;background:#EF9F27;border-radius:2px 2px 0 0"></div></div>
+          <div style="flex:1;height:100%;justify-content:flex-end;display:flex;flex-direction:column;gap:2px"><div style="height:18%;background:#EF9F27;border-radius:2px 2px 0 0"></div></div>
+          <div style="flex:1;height:100%;justify-content:flex-end;display:flex;flex-direction:column;gap:2px"><div style="height:70%;background:#E24B4A;border-radius:2px 2px 0 0"></div></div>
+          <div style="flex:1;height:100%;justify-content:flex-end;display:flex;flex-direction:column;gap:2px"><div style="height:22%;background:#EF9F27;border-radius:2px 2px 0 0"></div></div>
+          <div style="flex:1;height:100%;justify-content:flex-end;display:flex;flex-direction:column;gap:2px"><div style="height:8%;background:#EF9F27;border-radius:2px 2px 0 0"></div></div>
+          <div style="flex:1;height:100%;justify-content:flex-end;display:flex;flex-direction:column;gap:2px"><div style="height:4%;background:#EF9F27;border-radius:2px 2px 0 0"></div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary);margin-top:4px;padding:0 2px">
+          <span>-60min</span><span>-50min</span><span>-40min</span><span>-30min</span><span>-20min</span><span>-10min</span><span>now</span>
+        </div>
+      </div>
+
+      <div class="card" style="flex:1">
+        <div class="card-header">
+          <div class="card-title"><i class="ti ti-list" aria-hidden="true"></i>Journal des erreurs</div>
+          <div class="filters">
+            <span class="pill active all">Tous</span>
+            <span class="pill">Critique</span>
+            <span class="pill">Avertissement</span>
+            <span class="pill">Info</span>
+            <span class="pill">eth0</span>
+            <span class="pill">wlan0</span>
+            <input class="search" type="text" placeholder="Rechercher...">
+          </div>
+        </div>
+
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th style="width:130px">Horodatage</th>
+              <th style="width:80px">Sévérité</th>
+              <th style="width:70px">Interface</th>
+              <th>Message</th>
+              <th style="width:100px">Valeur</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="ts">14:32:08.441</span></td>
+              <td><span class="badge-sev sev-crit">Critique</span></td>
+              <td><span class="badge-iface b-wlan">wlan0</span></td>
+              <td class="err-msg">Perte de paquets dépassant le seuil</td>
+              <td><span class="err-val">18% > seuil 10%</span></td>
+            </tr>
+            <tr>
+              <td><span class="ts">14:31:55.102</span></td>
+              <td><span class="badge-sev sev-warn">Avertiss.</span></td>
+              <td><span class="badge-iface b-wlan">wlan0</span></td>
+              <td class="err-msg">Latence élevée détectée</td>
+              <td><span class="err-val">72ms > seuil 50ms</span></td>
+            </tr>
+            <tr>
+              <td><span class="ts">14:28:13.887</span></td>
+              <td><span class="badge-sev sev-warn">Avertiss.</span></td>
+              <td><span class="badge-iface b-eth">eth0</span></td>
+              <td class="err-msg">Erreurs entrant en hausse</td>
+              <td><span class="err-val">errin: +34/s</span></td>
+            </tr>
+            <tr>
+              <td><span class="ts">14:21:44.320</span></td>
+              <td><span class="badge-sev sev-crit">Critique</span></td>
+              <td><span class="badge-iface b-wlan">wlan0</span></td>
+              <td class="err-msg">Interface instable — signal faible</td>
+              <td><span class="err-val">signal: -82 dBm</span></td>
+            </tr>
+            <tr>
+              <td><span class="ts">14:18:02.561</span></td>
+              <td><span class="badge-sev sev-info">Info</span></td>
+              <td><span class="badge-iface b-all">système</span></td>
+              <td class="err-msg">Collecte redémarrée</td>
+              <td><span class="err-val">interval: 2s</span></td>
+            </tr>
+            <tr>
+              <td><span class="ts">14:10:38.774</span></td>
+              <td><span class="badge-sev sev-warn">Avertiss.</span></td>
+              <td><span class="badge-iface b-eth">eth0</span></td>
+              <td class="err-msg">Jitter anormalement élevé</td>
+              <td><span class="err-val">jitter: 24ms</span></td>
+            </tr>
+            <tr>
+              <td><span class="ts">13:58:17.009</span></td>
+              <td><span class="badge-sev sev-crit">Critique</span></td>
+              <td><span class="badge-iface b-wlan">wlan0</span></td>
+              <td class="err-msg">Hôte inaccessible</td>
+              <td><span class="err-val">1.1.1.1 timeout</span></td>
+            </tr>
+            <tr>
+              <td><span class="ts">13:45:50.213</span></td>
+              <td><span class="badge-sev sev-warn">Avertiss.</span></td>
+              <td><span class="badge-iface b-eth">eth0</span></td>
+              <td class="err-msg">Taux d'erreur sortant en hausse</td>
+              <td><span class="err-val">errout: 0.6%</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pagination">
+          <span>Affichage 1–8 sur 47 erreurs</span>
+          <div style="display:flex;gap:6px">
+            <button style="font-size:12px;padding:3px 10px">← Préc.</button>
+            <button style="font-size:12px;padding:3px 10px">Suiv. →</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', function() {
+    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active','warn','all'));
+    this.classList.add('active');
+  });
+});
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>

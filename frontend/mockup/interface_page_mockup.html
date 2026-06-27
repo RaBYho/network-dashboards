@@ -1,0 +1,239 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.dash{display:flex;min-height:720px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.sidebar{width:200px;flex-shrink:0;border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);padding:16px 0}
+.sidebar-title{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:0 16px 8px;letter-spacing:.04em}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:var(--color-text-secondary);cursor:pointer}
+.nav-item.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;border-right:2px solid #378ADD}
+.nav-item i{font-size:16px;opacity:.7}
+.nav-item.active i{opacity:1;color:#378ADD}
+.nav-sep{height:0.5px;background:var(--color-border-tertiary);margin:8px 16px}
+.main{flex:1;display:flex;flex-direction:column;background:var(--color-background-tertiary);min-width:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-title{font-size:15px;font-weight:500;color:var(--color-text-primary)}
+.content{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px}
+.card-title i{font-size:15px}
+.kpi-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.kpi{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.kpi-label{font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px}
+.kpi-value{font-size:20px;font-weight:500;color:var(--color-text-primary)}
+.kpi-unit{font-size:11px;color:var(--color-text-secondary);margin-left:2px}
+.kpi-sub{font-size:11px;color:var(--color-text-tertiary);margin-top:3px}
+.kpi-value.ok{color:#0F6E56}
+.kpi-value.warn{color:#BA7517}
+.row2{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.info-table{width:100%;font-size:12px;border-collapse:collapse}
+.info-table tr td{padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.info-table tr:last-child td{border-bottom:none}
+.info-label{color:var(--color-text-secondary);width:130px}
+.info-val{font-weight:500;color:var(--color-text-primary);font-family:var(--font-mono);font-size:11px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.stat-row:last-child{border-bottom:none}
+.stat-label{color:var(--color-text-secondary)}
+.stat-val{font-weight:500;color:var(--color-text-primary)}
+.dot-status{width:8px;height:8px;border-radius:50%;background:#1D9E75;display:inline-block}
+.badge{font-size:11px;padding:2px 9px;border-radius:20px}
+.b-up{background:#E1F5EE;color:#085041}
+.b-eth{background:#E6F1FB;color:#0C447C}
+.pill{font-size:11px;padding:3px 10px;border-radius:20px;cursor:pointer;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);background:transparent}
+.pill.active{background:#E6F1FB;color:#0C447C;border-color:#85B7EB}
+.pills{display:flex;gap:6px}
+.legend{display:flex;gap:14px;align-items:center}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--color-text-secondary)}
+.leg-line{width:16px;height:2px;border-radius:1px}
+.bar-wrap{height:5px;background:var(--color-background-secondary);border-radius:3px;margin-top:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px}
+.conn-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px}
+.conn-row:last-child{border-bottom:none}
+.conn-state{padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500}
+.s-estab{background:#E1F5EE;color:#085041}
+.s-wait{background:#FAEEDA;color:#633806}
+.s-close{background:#FCEBEB;color:#791F1F}
+</style>
+
+<h2 class="sr-only">Maquette de la page Interface eth0</h2>
+
+<div class="dash">
+  <div class="sidebar">
+    <div class="sidebar-title">NAVIGATION</div>
+    <div class="nav-item"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Vue globale</div>
+    <div class="nav-item"><i class="ti ti-activity" aria-hidden="true"></i>Débit</div>
+    <div class="nav-item"><i class="ti ti-clock" aria-hidden="true"></i>Latence</div>
+    <div class="nav-item"><i class="ti ti-alert-triangle" aria-hidden="true"></i>Erreurs</div>
+    <div class="nav-sep"></div>
+    <div class="sidebar-title">INTERFACES</div>
+    <div class="nav-item active"><i class="ti ti-network" aria-hidden="true"></i>eth0</div>
+    <div class="nav-item"><i class="ti ti-wifi" aria-hidden="true"></i>wlan0</div>
+    <div class="nav-sep"></div>
+    <div class="nav-item"><i class="ti ti-settings" aria-hidden="true"></i>Paramètres</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <i class="ti ti-network" style="font-size:16px;color:#378ADD" aria-hidden="true"></i>
+        <span class="topbar-title">Interface — eth0</span>
+        <span class="dot-status"></span>
+        <span class="badge b-up">UP</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="pills">
+          <span class="pill active">1 min</span>
+          <span class="pill">1 h</span>
+          <span class="pill">24 h</span>
+        </div>
+        <span style="font-size:12px;color:var(--color-text-tertiary);margin-left:4px">Màj : 2s</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-arrow-down" style="font-size:12px" aria-hidden="true"></i> Download</div>
+          <div class="kpi-value" style="color:#185FA5">42.3<span class="kpi-unit">Mbps</span></div>
+          <div class="kpi-sub">3.18 Mo/s</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-arrow-up" style="font-size:12px" aria-hidden="true"></i> Upload</div>
+          <div class="kpi-value" style="color:#185FA5">7.8<span class="kpi-unit">Mbps</span></div>
+          <div class="kpi-sub">0.97 Mo/s</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-clock" style="font-size:12px" aria-hidden="true"></i> Latence</div>
+          <div class="kpi-value ok">14<span class="kpi-unit">ms</span></div>
+          <div class="kpi-sub">jitter 2.1ms</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-alert-triangle" style="font-size:12px" aria-hidden="true"></i> Perte paquets</div>
+          <div class="kpi-value ok">0.0<span class="kpi-unit">%</span></div>
+          <div class="kpi-sub">aucune perte</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-users" style="font-size:12px" aria-hidden="true"></i> Connexions</div>
+          <div class="kpi-value">98</div>
+          <div class="kpi-sub">actives</div>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="ti ti-chart-line" aria-hidden="true"></i>Débit & latence — eth0</div>
+            <div class="legend">
+              <div class="leg-item"><div class="leg-line" style="background:#378ADD"></div>Download</div>
+              <div class="leg-item"><div class="leg-line" style="background:#85B7EB;border-top:2px dashed #85B7EB;height:0"></div>Upload</div>
+              <div class="leg-item"><div class="leg-line" style="background:#7F77DD"></div>RTT</div>
+            </div>
+          </div>
+          <svg width="100%" viewBox="0 0 380 160" style="display:block">
+            <line x1="0" y1="20" x2="380" y2="20" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+            <line x1="0" y1="60" x2="380" y2="60" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+            <line x1="0" y1="100" x2="380" y2="100" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+            <line x1="0" y1="140" x2="380" y2="140" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+            <text x="2" y="18" font-size="8" fill="var(--color-text-tertiary)">80M</text>
+            <text x="2" y="58" font-size="8" fill="var(--color-text-tertiary)">60M</text>
+            <text x="2" y="98" font-size="8" fill="var(--color-text-tertiary)">40M</text>
+            <text x="2" y="138" font-size="8" fill="var(--color-text-tertiary)">20M</text>
+            <path d="M20,110 C50,100 70,75 100,58 C130,41 150,70 185,52 C220,34 240,48 270,40 C300,32 320,45 350,38 C362,35 370,30 378,28" fill="none" stroke="#378ADD" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M20,135 C50,133 70,130 100,132 C130,134 150,128 185,130 C220,132 240,126 270,128 C300,130 320,124 350,126 C362,125 370,122 378,121" fill="none" stroke="#85B7EB" stroke-width="1.5" stroke-dasharray="5 3" stroke-linejoin="round"/>
+            <path d="M20,132 C50,130 70,128 100,131 C130,134 150,125 185,128 C220,131 240,122 270,125 C300,128 320,120 350,122 C362,121 370,118 378,117" fill="none" stroke="#7F77DD" stroke-width="1.5" stroke-linejoin="round"/>
+            <line x1="378" y1="10" x2="378" y2="150" stroke="var(--color-border-secondary)" stroke-width="0.5" stroke-dasharray="3 3"/>
+            <circle cx="378" cy="28" r="2.5" fill="#378ADD"/>
+            <circle cx="378" cy="121" r="2.5" fill="#85B7EB"/>
+            <circle cx="378" cy="117" r="2.5" fill="#7F77DD"/>
+          </svg>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="ti ti-info-circle" aria-hidden="true"></i>Informations</div>
+          </div>
+          <table class="info-table">
+            <tr><td class="info-label">Adresse IP</td><td class="info-val">192.168.1.42</td></tr>
+            <tr><td class="info-label">Masque</td><td class="info-val">255.255.255.0</td></tr>
+            <tr><td class="info-label">Passerelle</td><td class="info-val">192.168.1.1</td></tr>
+            <tr><td class="info-label">Adresse MAC</td><td class="info-val">a4:c3:f0:12:34:56</td></tr>
+            <tr><td class="info-label">MTU</td><td class="info-val">1500 octets</td></tr>
+            <tr><td class="info-label">Vitesse max</td><td class="info-val">1000 Mbps</td></tr>
+            <tr><td class="info-label">Duplex</td><td class="info-val">Full duplex</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="row3">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="ti ti-database" aria-hidden="true"></i>Trafic cumulé</div>
+          </div>
+          <div class="stat-row"><span class="stat-label">Total reçu</span><span class="stat-val">980 Mo</span></div>
+          <div class="stat-row"><span class="stat-label">Total envoyé</span><span class="stat-val">124 Mo</span></div>
+          <div class="stat-row"><span class="stat-label">Paquets reçus</span><span class="stat-val">712 480</span></div>
+          <div class="stat-row"><span class="stat-label">Paquets envoyés</span><span class="stat-val">98 340</span></div>
+          <div style="margin-top:10px">
+            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px">Utilisation (42.3 / 1000 Mbps)</div>
+            <div class="bar-wrap"><div class="bar-fill" style="width:4%;background:#378ADD"></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="ti ti-alert-circle" aria-hidden="true"></i>Compteurs d'erreurs</div>
+          </div>
+          <div class="stat-row"><span class="stat-label">Erreurs entrant</span><span class="stat-val ok" style="color:#0F6E56">0</span></div>
+          <div class="stat-row"><span class="stat-label">Erreurs sortant</span><span class="stat-val ok" style="color:#0F6E56">2</span></div>
+          <div class="stat-row"><span class="stat-label">Paquets perdus ↓</span><span class="stat-val ok" style="color:#0F6E56">0</span></div>
+          <div class="stat-row"><span class="stat-label">Paquets perdus ↑</span><span class="stat-val ok" style="color:#0F6E56">1</span></div>
+          <div class="stat-row"><span class="stat-label">Taux d'erreur</span><span class="stat-val ok" style="color:#0F6E56">0.002%</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="ti ti-plug" aria-hidden="true"></i>Connexions TCP</div>
+          </div>
+          <div class="conn-row">
+            <span style="color:var(--color-text-secondary)">ESTABLISHED</span>
+            <span class="conn-state s-estab">82</span>
+          </div>
+          <div class="conn-row">
+            <span style="color:var(--color-text-secondary)">TIME_WAIT</span>
+            <span class="conn-state s-wait">11</span>
+          </div>
+          <div class="conn-row">
+            <span style="color:var(--color-text-secondary)">CLOSE_WAIT</span>
+            <span class="conn-state s-wait">3</span>
+          </div>
+          <div class="conn-row">
+            <span style="color:var(--color-text-secondary)">LISTEN</span>
+            <span class="conn-state s-estab">2</span>
+          </div>
+          <div class="conn-row">
+            <span style="color:var(--color-text-secondary)">FIN_WAIT</span>
+            <span class="conn-state s-close">0</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.pill').forEach(p=>{
+  p.addEventListener('click',function(){
+    document.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click',function(){
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
