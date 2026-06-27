@@ -1,0 +1,187 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.dash{display:flex;min-height:680px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.sidebar{width:200px;flex-shrink:0;border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);padding:16px 0}
+.sidebar-title{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:0 16px 8px;letter-spacing:.04em}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:var(--color-text-secondary);cursor:pointer}
+.nav-item.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;border-right:2px solid #378ADD}
+.nav-item i{font-size:16px;opacity:.7}
+.nav-item.active i{opacity:1;color:#378ADD}
+.nav-sep{height:0.5px;background:var(--color-border-tertiary);margin:8px 16px}
+.main{flex:1;display:flex;flex-direction:column;background:var(--color-background-tertiary);min-width:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-title{font-size:15px;font-weight:500;color:var(--color-text-primary)}
+.content{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px}
+.card-title i{font-size:15px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.kpi-label{font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px}
+.kpi-value{font-size:20px;font-weight:500;color:var(--color-text-primary)}
+.kpi-unit{font-size:11px;color:var(--color-text-secondary);margin-left:2px}
+.kpi-sub{font-size:11px;color:var(--color-text-tertiary);margin-top:3px}
+.pill{font-size:11px;padding:3px 10px;border-radius:20px;cursor:pointer;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);background:transparent}
+.pill.active{background:#E6F1FB;color:#0C447C;border-color:#85B7EB}
+.pills{display:flex;gap:6px}
+.legend{display:flex;gap:16px;align-items:center}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--color-text-secondary)}
+.leg-dot{width:10px;height:3px;border-radius:2px}
+.iface-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.iface-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px}
+.iface-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.iface-name{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:6px}
+.dot-status{width:7px;height:7px;border-radius:50%;background:#1D9E75;display:inline-block}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.stat-row:last-child{border-bottom:none}
+.stat-label{color:var(--color-text-secondary)}
+.stat-val{font-weight:500;color:var(--color-text-primary)}
+.badge-iface{font-size:11px;padding:2px 8px;border-radius:20px}
+.b-eth{background:#E6F1FB;color:#0C447C}
+.b-wlan{background:#E1F5EE;color:#085041}
+.bar-wrap{height:4px;background:var(--color-background-secondary);border-radius:2px;margin-top:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px}
+</style>
+
+<h2 class="sr-only">Maquette de la page Débit</h2>
+
+<div class="dash">
+  <div class="sidebar">
+    <div class="sidebar-title">NAVIGATION</div>
+    <div class="nav-item"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Vue globale</div>
+    <div class="nav-item active"><i class="ti ti-activity" aria-hidden="true"></i>Débit</div>
+    <div class="nav-item"><i class="ti ti-clock" aria-hidden="true"></i>Latence</div>
+    <div class="nav-item"><i class="ti ti-alert-triangle" aria-hidden="true"></i>Erreurs</div>
+    <div class="nav-sep"></div>
+    <div class="sidebar-title">INTERFACES</div>
+    <div class="nav-item"><i class="ti ti-network" aria-hidden="true"></i>eth0</div>
+    <div class="nav-item"><i class="ti ti-wifi" aria-hidden="true"></i>wlan0</div>
+    <div class="nav-sep"></div>
+    <div class="nav-item"><i class="ti ti-settings" aria-hidden="true"></i>Paramètres</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <i class="ti ti-activity" style="font-size:16px;color:#378ADD" aria-hidden="true"></i>
+        <span class="topbar-title">Débit réseau</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="pills">
+          <span class="pill active">1 min</span>
+          <span class="pill">1 h</span>
+          <span class="pill">24 h</span>
+        </div>
+        <span style="font-size:12px;color:var(--color-text-tertiary);margin-left:4px">Màj : 2s</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-arrow-down" style="font-size:12px" aria-hidden="true"></i> Download total</div>
+          <div class="kpi-value">51.0<span class="kpi-unit">Mbps</span></div>
+          <div class="kpi-sub">eth0 + wlan0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-arrow-up" style="font-size:12px" aria-hidden="true"></i> Upload total</div>
+          <div class="kpi-value">10.4<span class="kpi-unit">Mbps</span></div>
+          <div class="kpi-sub">eth0 + wlan0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-trending-up" style="font-size:12px" aria-hidden="true"></i> Pic download</div>
+          <div class="kpi-value">78.3<span class="kpi-unit">Mbps</span></div>
+          <div class="kpi-sub">il y a 42s</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-database" style="font-size:12px" aria-hidden="true"></i> Total transféré</div>
+          <div class="kpi-value">1.24<span class="kpi-unit">Go</span></div>
+          <div class="kpi-sub">depuis démarrage</div>
+        </div>
+      </div>
+
+      <div class="card" style="flex:1">
+        <div class="card-header">
+          <div class="card-title"><i class="ti ti-chart-line" aria-hidden="true"></i>Débit en temps réel — eth0 &amp; wlan0</div>
+          <div class="legend">
+            <div class="leg-item"><div class="leg-dot" style="background:#378ADD"></div>eth0 ↓</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#85B7EB;border-top:2px dashed #85B7EB;height:0"></div>eth0 ↑</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#1D9E75"></div>wlan0 ↓</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#5DCAA5"></div>wlan0 ↑</div>
+          </div>
+        </div>
+        <svg width="100%" viewBox="0 0 580 200" style="display:block">
+          <line x1="0" y1="40" x2="580" y2="40" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+          <line x1="0" y1="80" x2="580" y2="80" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+          <line x1="0" y1="120" x2="580" y2="120" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+          <line x1="0" y1="160" x2="580" y2="160" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+          <text x="4" y="38" font-size="9" fill="var(--color-text-tertiary)">80</text>
+          <text x="4" y="78" font-size="9" fill="var(--color-text-tertiary)">60</text>
+          <text x="4" y="118" font-size="9" fill="var(--color-text-tertiary)">40</text>
+          <text x="4" y="158" font-size="9" fill="var(--color-text-tertiary)">20</text>
+          <text x="4" y="192" font-size="9" fill="var(--color-text-tertiary)">Mbps</text>
+          <text x="50" y="192" font-size="9" fill="var(--color-text-tertiary)">0s</text>
+          <text x="190" y="192" font-size="9" fill="var(--color-text-tertiary)">20s</text>
+          <text x="330" y="192" font-size="9" fill="var(--color-text-tertiary)">40s</text>
+          <text x="470" y="192" font-size="9" fill="var(--color-text-tertiary)">60s</text>
+          <path d="M30,130 C60,120 80,90 110,70 C140,50 160,80 200,60 C240,40 260,55 300,45 C340,35 360,50 400,42 C440,34 460,28 500,25 C530,22 555,30 575,28" fill="none" stroke="#378ADD" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M30,155 C60,152 80,148 110,150 C140,152 160,145 200,148 C240,151 260,143 300,146 C340,149 360,140 400,143 C440,146 460,138 500,140 C530,138 555,135 575,133" fill="none" stroke="#85B7EB" stroke-width="1.5" stroke-dasharray="5 3" stroke-linejoin="round"/>
+          <path d="M30,150 C60,145 80,138 110,130 C140,122 160,135 200,125 C240,115 260,128 300,118 C340,108 360,120 400,112 C440,104 460,115 500,108 C530,104 555,98 575,95" fill="none" stroke="#1D9E75" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M30,168 C60,166 80,163 110,165 C140,167 160,162 200,164 C240,166 260,160 300,162 C340,164 360,158 400,160 C440,162 460,156 500,158 C530,156 555,153 575,151" fill="none" stroke="#5DCAA5" stroke-width="1.5" stroke-dasharray="5 3" stroke-linejoin="round"/>
+          <line x1="575" y1="10" x2="575" y2="180" stroke="var(--color-border-secondary)" stroke-width="0.5" stroke-dasharray="3 3"/>
+          <circle cx="575" cy="28" r="3" fill="#378ADD"/>
+          <circle cx="575" cy="133" r="3" fill="#85B7EB"/>
+          <circle cx="575" cy="95" r="3" fill="#1D9E75"/>
+          <circle cx="575" cy="151" r="3" fill="#5DCAA5"/>
+        </svg>
+      </div>
+
+      <div class="iface-row">
+        <div class="iface-card">
+          <div class="iface-header">
+            <div class="iface-name"><span class="dot-status"></span><span class="badge-iface b-eth">eth0</span></div>
+            <span style="font-size:11px;color:var(--color-text-tertiary)">Filaire</span>
+          </div>
+          <div class="stat-row"><span class="stat-label"><i class="ti ti-arrow-down" style="font-size:12px" aria-hidden="true"></i> Download</span><span class="stat-val" style="color:#185FA5">42.3 Mbps</span></div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:53%;background:#378ADD"></div></div>
+          <div class="stat-row" style="margin-top:8px"><span class="stat-label"><i class="ti ti-arrow-up" style="font-size:12px" aria-hidden="true"></i> Upload</span><span class="stat-val" style="color:#185FA5">7.8 Mbps</span></div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:10%;background:#85B7EB"></div></div>
+          <div class="stat-row" style="margin-top:8px"><span class="stat-label">Total reçu</span><span class="stat-val">980 Mo</span></div>
+          <div class="stat-row"><span class="stat-label">Total envoyé</span><span class="stat-val">124 Mo</span></div>
+        </div>
+
+        <div class="iface-card">
+          <div class="iface-header">
+            <div class="iface-name"><span class="dot-status"></span><span class="badge-iface b-wlan">wlan0</span></div>
+            <span style="font-size:11px;color:var(--color-text-tertiary)">Wi-Fi</span>
+          </div>
+          <div class="stat-row"><span class="stat-label"><i class="ti ti-arrow-down" style="font-size:12px" aria-hidden="true"></i> Download</span><span class="stat-val" style="color:#0F6E56">8.7 Mbps</span></div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:11%;background:#1D9E75"></div></div>
+          <div class="stat-row" style="margin-top:8px"><span class="stat-label"><i class="ti ti-arrow-up" style="font-size:12px" aria-hidden="true"></i> Upload</span><span class="stat-val" style="color:#0F6E56">2.6 Mbps</span></div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:3%;background:#5DCAA5"></div></div>
+          <div class="stat-row" style="margin-top:8px"><span class="stat-label">Total reçu</span><span class="stat-val">265 Mo</span></div>
+          <div class="stat-row"><span class="stat-label">Total envoyé</span><span class="stat-val">38 Mo</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', function() {
+    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>

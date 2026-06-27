@@ -1,0 +1,358 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.dash{display:flex;min-height:740px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.sidebar{width:200px;flex-shrink:0;border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);padding:16px 0}
+.sidebar-title{font-size:11px;font-weight:500;color:var(--color-text-tertiary);padding:0 16px 8px;letter-spacing:.04em}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:var(--color-text-secondary);cursor:pointer}
+.nav-item.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;border-right:2px solid #378ADD}
+.nav-item i{font-size:16px;opacity:.7}
+.nav-item.active i{opacity:1;color:#378ADD}
+.nav-sep{height:0.5px;background:var(--color-border-tertiary);margin:8px 16px}
+.main{flex:1;display:flex;min-width:0}
+.param-nav{width:170px;flex-shrink:0;border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);padding:12px 0}
+.param-nav-item{display:flex;align-items:center;gap:8px;padding:8px 14px;font-size:12px;color:var(--color-text-secondary);cursor:pointer;border-radius:0}
+.param-nav-item.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;border-right:2px solid #378ADD}
+.param-nav-item i{font-size:14px;opacity:.7}
+.param-nav-item.active i{opacity:1;color:#378ADD}
+.param-content{flex:1;display:flex;flex-direction:column;background:var(--color-background-tertiary);min-width:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-title{font-size:15px;font-weight:500;color:var(--color-text-primary)}
+.content{flex:1;padding:16px;display:flex;flex-direction:column;gap:14px;overflow:auto}
+.section{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px 18px}
+.section-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:7px;margin-bottom:14px;padding-bottom:10px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.section-title i{font-size:15px;color:#378ADD}
+.field{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.field:last-child{border-bottom:none;padding-bottom:0}
+.field-left{flex:1}
+.field-label{font-size:13px;color:var(--color-text-primary);font-weight:500}
+.field-desc{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+.field-control{flex-shrink:0;margin-left:24px}
+input[type=range]{width:140px;accent-color:#378ADD}
+input[type=number]{width:80px;font-size:13px;padding:5px 8px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);text-align:center}
+input[type=text]{font-size:13px;padding:5px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);width:200px}
+select{font-size:13px;padding:5px 8px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary)}
+.toggle{width:40px;height:22px;border-radius:11px;background:#378ADD;position:relative;cursor:pointer;flex-shrink:0}
+.toggle::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:white;top:3px;right:3px;transition:right .2s}
+.toggle.off{background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary)}
+.toggle.off::after{right:auto;left:3px}
+.tag-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tag{display:flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-primary)}
+.tag-remove{font-size:14px;color:var(--color-text-tertiary);cursor:pointer;line-height:1}
+.add-row{display:flex;gap:8px;align-items:center}
+.iface-list{display:flex;flex-direction:column;gap:8px}
+.iface-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary)}
+.iface-info{display:flex;align-items:center;gap:8px}
+.iface-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.iface-ip{font-size:11px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+.dot-status{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot-green{background:#1D9E75}
+.dot-gray{background:var(--color-text-tertiary)}
+.theme-options{display:flex;gap:10px}
+.theme-btn{padding:6px 16px;border-radius:var(--border-radius-md);font-size:12px;border:0.5px solid var(--color-border-secondary);cursor:pointer;background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.theme-btn.active{background:#E6F1FB;color:#0C447C;border-color:#85B7EB;font-weight:500}
+.api-status{display:flex;align-items:center;gap:6px;font-size:12px;color:#0F6E56}
+.save-bar{display:flex;justify-content:flex-end;gap:8px;padding-top:4px}
+button.primary{background:#378ADD;color:white;border:none;font-size:13px;padding:7px 18px;border-radius:var(--border-radius-md);cursor:pointer;font-weight:500}
+button.secondary{background:transparent;border:0.5px solid var(--color-border-secondary);font-size:13px;padding:7px 18px;border-radius:var(--border-radius-md);cursor:pointer;color:var(--color-text-secondary)}
+.val-label{font-size:13px;font-weight:500;color:#378ADD;min-width:30px;text-align:right}
+.slider-row{display:flex;align-items:center;gap:10px}
+</style>
+
+<h2 class="sr-only">Maquette de la page Paramètres</h2>
+
+<div class="dash">
+  <div class="sidebar">
+    <div class="sidebar-title">NAVIGATION</div>
+    <div class="nav-item"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Vue globale</div>
+    <div class="nav-item"><i class="ti ti-activity" aria-hidden="true"></i>Débit</div>
+    <div class="nav-item"><i class="ti ti-clock" aria-hidden="true"></i>Latence</div>
+    <div class="nav-item"><i class="ti ti-alert-triangle" aria-hidden="true"></i>Erreurs</div>
+    <div class="nav-sep"></div>
+    <div class="sidebar-title">INTERFACES</div>
+    <div class="nav-item"><i class="ti ti-network" aria-hidden="true"></i>eth0</div>
+    <div class="nav-item"><i class="ti ti-wifi" aria-hidden="true"></i>wlan0</div>
+    <div class="nav-sep"></div>
+    <div class="nav-item active"><i class="ti ti-settings" aria-hidden="true"></i>Paramètres</div>
+  </div>
+
+  <div class="main">
+    <div class="param-nav">
+      <div class="param-nav-item active"><i class="ti ti-refresh" aria-hidden="true"></i>Collecte</div>
+      <div class="param-nav-item"><i class="ti ti-target" aria-hidden="true"></i>Cibles ping</div>
+      <div class="param-nav-item"><i class="ti ti-bell" aria-hidden="true"></i>Seuils d'alerte</div>
+      <div class="param-nav-item"><i class="ti ti-server" aria-hidden="true"></i>Interfaces</div>
+      <div class="param-nav-item"><i class="ti ti-palette" aria-hidden="true"></i>Apparence</div>
+      <div class="param-nav-item"><i class="ti ti-link" aria-hidden="true"></i>API</div>
+    </div>
+
+    <div class="param-content">
+      <div class="topbar">
+        <div class="topbar-left">
+          <i class="ti ti-settings" style="font-size:16px;color:#378ADD" aria-hidden="true"></i>
+          <span class="topbar-title">Paramètres</span>
+        </div>
+        <div class="save-bar">
+          <button class="secondary">Annuler</button>
+          <button class="primary"><i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Sauvegarder</button>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <div class="section">
+          <div class="section-title"><i class="ti ti-refresh" aria-hidden="true"></i>Collecte des données</div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Intervalle de collecte</div>
+              <div class="field-desc">Fréquence de rafraîchissement des métriques réseau</div>
+            </div>
+            <div class="field-control">
+              <div class="slider-row">
+                <input type="range" min="1" max="10" value="2">
+                <span class="val-label">2s</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary);width:140px;margin-top:2px">
+                <span>1s</span><span>5s</span><span>10s</span>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Intervalle de ping</div>
+              <div class="field-desc">Fréquence des tests de latence vers les cibles</div>
+            </div>
+            <div class="field-control">
+              <div class="slider-row">
+                <input type="range" min="1" max="30" value="5">
+                <span class="val-label">5s</span>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Nombre de pings par test</div>
+              <div class="field-desc">Paquets ICMP envoyés à chaque mesure de latence</div>
+            </div>
+            <div class="field-control">
+              <input type="number" value="4" min="1" max="20">
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Collecte active</div>
+              <div class="field-desc">Activer ou suspendre la collecte des métriques</div>
+            </div>
+            <div class="field-control">
+              <div class="toggle" aria-label="Collecte active : activée"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><i class="ti ti-target" aria-hidden="true"></i>Cibles de ping</div>
+          <div class="tag-list">
+            <div class="tag"><span>8.8.8.8</span><span class="tag-remove" aria-label="Supprimer 8.8.8.8">×</span></div>
+            <div class="tag"><span>1.1.1.1</span><span class="tag-remove" aria-label="Supprimer 1.1.1.1">×</span></div>
+            <div class="tag"><span>192.168.1.1</span><span class="tag-remove" aria-label="Supprimer 192.168.1.1">×</span></div>
+          </div>
+          <div class="add-row">
+            <input type="text" placeholder="Ajouter une adresse IP ou un hôte...">
+            <button class="primary" style="padding:6px 14px">+ Ajouter</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><i class="ti ti-bell" aria-hidden="true"></i>Seuils d'alerte</div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Latence maximale</div>
+              <div class="field-desc">Déclenche une alerte si le RTT dépasse ce seuil</div>
+            </div>
+            <div class="field-control" style="display:flex;align-items:center;gap:6px">
+              <input type="number" value="50" min="1" max="1000">
+              <span style="font-size:12px;color:var(--color-text-secondary)">ms</span>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Perte de paquets max.</div>
+              <div class="field-desc">Déclenche une alerte si la perte dépasse ce seuil</div>
+            </div>
+            <div class="field-control" style="display:flex;align-items:center;gap:6px">
+              <input type="number" value="10" min="0" max="100">
+              <span style="font-size:12px;color:var(--color-text-secondary)">%</span>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Jitter maximal</div>
+              <div class="field-desc">Déclenche une alerte si le jitter dépasse ce seuil</div>
+            </div>
+            <div class="field-control" style="display:flex;align-items:center;gap:6px">
+              <input type="number" value="20" min="1" max="500">
+              <span style="font-size:12px;color:var(--color-text-secondary)">ms</span>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Taux d'erreur max.</div>
+              <div class="field-desc">Déclenche une alerte si le taux d'erreur dépasse ce seuil</div>
+            </div>
+            <div class="field-control" style="display:flex;align-items:center;gap:6px">
+              <input type="number" value="5" min="0" max="100">
+              <span style="font-size:12px;color:var(--color-text-secondary)">%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><i class="ti ti-server" aria-hidden="true"></i>Interfaces surveillées</div>
+          <div class="iface-list">
+            <div class="iface-item">
+              <div class="iface-info">
+                <span class="dot-status dot-green"></span>
+                <div>
+                  <div class="iface-name">eth0</div>
+                  <div class="iface-ip">192.168.1.42 — Filaire</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:11px;color:var(--color-text-tertiary)">Surveiller</span>
+                <div class="toggle" aria-label="eth0 : surveillance activée"></div>
+              </div>
+            </div>
+            <div class="iface-item">
+              <div class="iface-info">
+                <span class="dot-status dot-green"></span>
+                <div>
+                  <div class="iface-name">wlan0</div>
+                  <div class="iface-ip">192.168.1.87 — Wi-Fi</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:11px;color:var(--color-text-tertiary)">Surveiller</span>
+                <div class="toggle" aria-label="wlan0 : surveillance activée"></div>
+              </div>
+            </div>
+            <div class="iface-item">
+              <div class="iface-info">
+                <span class="dot-status dot-gray"></span>
+                <div>
+                  <div class="iface-name" style="color:var(--color-text-tertiary)">lo</div>
+                  <div class="iface-ip">127.0.0.1 — Loopback</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:11px;color:var(--color-text-tertiary)">Surveiller</span>
+                <div class="toggle off" aria-label="lo : surveillance désactivée"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><i class="ti ti-palette" aria-hidden="true"></i>Apparence</div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Thème</div>
+              <div class="field-desc">Choisir l'apparence de l'interface</div>
+            </div>
+            <div class="field-control">
+              <div class="theme-options">
+                <button class="theme-btn active"><i class="ti ti-sun" aria-hidden="true"></i> Clair</button>
+                <button class="theme-btn"><i class="ti ti-moon" aria-hidden="true"></i> Sombre</button>
+                <button class="theme-btn"><i class="ti ti-device-desktop" aria-hidden="true"></i> Système</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Unité de débit</div>
+              <div class="field-desc">Afficher le débit en bits ou en octets</div>
+            </div>
+            <div class="field-control">
+              <select>
+                <option>Mbps (mégabits)</option>
+                <option>MBps (mégaoctets)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Langue</div>
+              <div class="field-desc">Langue de l'interface</div>
+            </div>
+            <div class="field-control">
+              <select>
+                <option>Français</option>
+                <option>English</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><i class="ti ti-link" aria-hidden="true"></i>Connexion API</div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">URL du backend</div>
+              <div class="field-desc">Adresse de l'API FastAPI</div>
+            </div>
+            <div class="field-control">
+              <input type="text" value="http://localhost:8000" style="width:220px">
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-left">
+              <div class="field-label">Statut de la connexion</div>
+              <div class="field-desc">Vérifie la disponibilité du backend</div>
+            </div>
+            <div class="field-control" style="display:flex;align-items:center;gap:10px">
+              <div class="api-status"><span class="dot-status dot-green"></span> Connecté</div>
+              <button class="secondary" style="padding:5px 12px;font-size:12px">Tester</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click',function(){
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+document.querySelectorAll('.param-nav-item').forEach(item=>{
+  item.addEventListener('click',function(){
+    document.querySelectorAll('.param-nav-item').forEach(i=>i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+document.querySelectorAll('.toggle').forEach(t=>{
+  t.addEventListener('click',function(){
+    this.classList.toggle('off');
+  });
+});
+document.querySelectorAll('.theme-btn').forEach(b=>{
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.theme-btn').forEach(x=>x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+document.querySelectorAll('input[type=range]').forEach(r=>{
+  const label = r.parentElement.querySelector('.val-label');
+  r.addEventListener('input',function(){
+    if(label) label.textContent = this.value+'s';
+  });
+});
+document.querySelectorAll('.tag-remove').forEach(x=>{
+  x.addEventListener('click',function(){
+    this.closest('.tag').remove();
+  });
+});
+</script>

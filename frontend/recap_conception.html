@@ -1,0 +1,165 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{display:flex;flex-direction:column;gap:14px;padding:2px}
+.header{display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg)}
+.header-title{font-size:15px;font-weight:500;color:var(--color-text-primary)}
+.header-sub{font-size:12px;color:var(--color-text-tertiary);margin-top:2px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px}
+.card-title{font-size:12px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:7px;margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.card-title i{font-size:14px}
+.page-item{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.page-item:last-child{border-bottom:none}
+.page-icon{width:28px;height:28px;border-radius:var(--border-radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.page-name{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+.page-desc{font-size:11px;color:var(--color-text-tertiary);margin-top:2px;line-height:1.4}
+.comp-item{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.comp-item:last-child{border-bottom:none}
+.comp-item i{font-size:13px;color:var(--color-text-tertiary)}
+.badge{font-size:10px;padding:2px 7px;border-radius:20px;margin-left:auto;flex-shrink:0}
+.b-blue{background:#E6F1FB;color:#0C447C}
+.b-green{background:#E1F5EE;color:#085041}
+.b-purple{background:#EEEDFE;color:#3C3489}
+.b-amber{background:#FAEEDA;color:#633806}
+.b-red{background:#FCEBEB;color:#791F1F}
+.b-gray{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.tech-item{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.tech-item:last-child{border-bottom:none}
+.tech-name{font-weight:500;color:var(--color-text-primary)}
+.tech-desc{color:var(--color-text-tertiary);font-size:11px}
+.step-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.step-item:last-child{border-bottom:none}
+.step-num{width:22px;height:22px;border-radius:50%;background:#378ADD;color:white;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-name{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+.step-desc{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+</style>
+
+<div class="wrap">
+
+  <div class="header">
+    <i class="ti ti-layout-dashboard" style="font-size:20px;color:#378ADD" aria-hidden="true"></i>
+    <div>
+      <div class="header-title">Dashboard de monitoring réseau — Récapitulatif de conception</div>
+      <div class="header-sub">Python (FastAPI) + Vue.js 3 — Application desktop web</div>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-map" aria-hidden="true" style="color:#378ADD"></i>Pages & contenu</div>
+
+      <div class="page-item">
+        <div class="page-icon" style="background:#E6F1FB"><i class="ti ti-layout-dashboard" style="color:#0C447C" aria-hidden="true"></i></div>
+        <div>
+          <div class="page-name">Vue globale</div>
+          <div class="page-desc">4 KPI · graphique débit · graphique latence · métriques clés · utilisation · disponibilité</div>
+        </div>
+      </div>
+
+      <div class="page-item">
+        <div class="page-icon" style="background:#E6F1FB"><i class="ti ti-activity" style="color:#0C447C" aria-hidden="true"></i></div>
+        <div>
+          <div class="page-name">Débit</div>
+          <div class="page-desc">4 KPI · grand graphique 4 courbes (eth0+wlan0 ↑↓) · sélecteur 1min/1h/24h · cartes par interface</div>
+        </div>
+      </div>
+
+      <div class="page-item">
+        <div class="page-icon" style="background:#EEEDFE"><i class="ti ti-clock" style="color:#3C3489" aria-hidden="true"></i></div>
+        <div>
+          <div class="page-name">Latence</div>
+          <div class="page-desc">5 KPI · grand graphique RTT+jitter · ligne seuil d'alerte · tableau cibles ping par interface</div>
+        </div>
+      </div>
+
+      <div class="page-item">
+        <div class="page-icon" style="background:#FCEBEB"><i class="ti ti-alert-triangle" style="color:#791F1F" aria-hidden="true"></i></div>
+        <div>
+          <div class="page-name">Erreurs</div>
+          <div class="page-desc">4 KPI · histogramme fréquence · journal filtrable (sévérité, interface, recherche) · pagination · export CSV</div>
+        </div>
+      </div>
+
+      <div class="page-item">
+        <div class="page-icon" style="background:#E1F5EE"><i class="ti ti-network" style="color:#085041" aria-hidden="true"></i></div>
+        <div>
+          <div class="page-name">Interface (eth0 / wlan0)</div>
+          <div class="page-desc">5 KPI · graphique débit+latence · infos réseau · trafic cumulé · erreurs · connexions TCP</div>
+        </div>
+      </div>
+
+      <div class="page-item" style="border:none">
+        <div class="page-icon" style="background:var(--color-background-secondary)"><i class="ti ti-settings" style="color:var(--color-text-secondary)" aria-hidden="true"></i></div>
+        <div>
+          <div class="page-name">Paramètres</div>
+          <div class="page-desc">Collecte · cibles ping · seuils d'alerte · interfaces · apparence · connexion API</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-components" aria-hidden="true" style="color:#7F77DD"></i>Composants Vue.js à créer</div>
+        <div class="comp-item"><i class="ti ti-layout-sidebar" aria-hidden="true"></i>AppSidebar.vue<span class="badge b-gray">Layout</span></div>
+        <div class="comp-item"><i class="ti ti-square" aria-hidden="true"></i>KpiCard.vue<span class="badge b-gray">Layout</span></div>
+        <div class="comp-item"><i class="ti ti-chart-line" aria-hidden="true"></i>BandwidthChart.vue<span class="badge b-blue">Débit</span></div>
+        <div class="comp-item"><i class="ti ti-chart-line" aria-hidden="true"></i>LatencyChart.vue<span class="badge b-purple">Latence</span></div>
+        <div class="comp-item"><i class="ti ti-list" aria-hidden="true"></i>ErrorLog.vue<span class="badge b-red">Erreurs</span></div>
+        <div class="comp-item"><i class="ti ti-server" aria-hidden="true"></i>InterfaceCard.vue<span class="badge b-green">Interface</span></div>
+        <div class="comp-item"><i class="ti ti-settings" aria-hidden="true"></i>SettingsForm.vue<span class="badge b-gray">Params</span></div>
+        <div class="comp-item"><i class="ti ti-gauge" aria-hidden="true"></i>UsageBar.vue<span class="badge b-gray">Commun</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-stack" aria-hidden="true" style="color:#1D9E75"></i>Stack technique</div>
+        <div class="tech-item"><span class="tech-name">Vue 3 + Vite</span><span class="tech-desc">Base du projet</span></div>
+        <div class="tech-item"><span class="tech-name">Vue Router</span><span class="tech-desc">Navigation entre pages</span></div>
+        <div class="tech-item"><span class="tech-name">Pinia</span><span class="tech-desc">État global des métriques</span></div>
+        <div class="tech-item"><span class="tech-name">Chart.js ou ApexCharts</span><span class="tech-desc">Graphiques temps réel</span></div>
+        <div class="tech-item"><span class="tech-name">Tailwind CSS</span><span class="tech-desc">Styles desktop</span></div>
+        <div class="tech-item"><span class="tech-name">Axios + polling</span><span class="tech-desc">Communication avec FastAPI</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-stairs" aria-hidden="true" style="color:#378ADD"></i>Ordre de développement recommandé</div>
+    <div class="grid3">
+      <div>
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div><div class="step-name">Mise en place du projet</div><div class="step-desc">Vite + Vue Router + Pinia + Tailwind · structure des dossiers · AppSidebar</div></div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div><div class="step-name">Store Pinia</div><div class="step-desc">networkStore : métriques, polling axios, paramètres globaux</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div><div class="step-name">Composants communs</div><div class="step-desc">KpiCard · UsageBar · graphiques de base avec données mockées</div></div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div><div class="step-name">Pages principales</div><div class="step-desc">Vue globale → Débit → Latence → Erreurs → Interface</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="step-item">
+          <div class="step-num">5</div>
+          <div><div class="step-name">Connexion au backend</div><div class="step-desc">Remplacer les données mockées par les vrais appels API FastAPI</div></div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">6</div>
+          <div><div class="step-name">Paramètres & finitions</div><div class="step-desc">SettingsForm · thème clair/sombre · seuils d'alerte dynamiques</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

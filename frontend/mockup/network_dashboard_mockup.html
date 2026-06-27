@@ -1,0 +1,190 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.dash{display:flex;min-height:600px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.sidebar{width:200px;flex-shrink:0;border-right:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);padding:16px 0}
+.sidebar-title{font-size:12px;font-weight:500;color:var(--color-text-tertiary);padding:0 16px 10px;letter-spacing:.04em}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:13px;color:var(--color-text-secondary);cursor:pointer;border-radius:0}
+.nav-item.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;border-right:2px solid #378ADD}
+.nav-item i{font-size:16px;opacity:.7}
+.nav-item.active i{opacity:1;color:#378ADD}
+.nav-sep{height:0.5px;background:var(--color-border-tertiary);margin:8px 16px}
+.main{flex:1;display:flex;flex-direction:column;background:var(--color-background-tertiary)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.topbar-title{font-size:15px;font-weight:500;color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;background:#E1F5EE;color:#085041;font-weight:500}
+.badge.warn{background:#FAEEDA;color:#633806}
+.content{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+.kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px}
+.kpi-label{font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.kpi-label i{font-size:14px}
+.kpi-value{font-size:22px;font-weight:500;color:var(--color-text-primary);line-height:1.1}
+.kpi-unit{font-size:12px;color:var(--color-text-secondary);margin-left:2px}
+.kpi-trend{font-size:11px;margin-top:4px}
+.kpi-trend.up{color:#0F6E56}.kpi-trend.down{color:#A32D2D}.kpi-trend.ok{color:#185FA5}
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card-title i{font-size:15px}
+.chart-placeholder{border-radius:var(--border-radius-md);overflow:hidden}
+.bottom-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px}
+.stat-row:last-child{border-bottom:none}
+.stat-label{color:var(--color-text-secondary)}
+.stat-val{font-weight:500;color:var(--color-text-primary)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+.dot.green{background:#1D9E75}.dot.amber{background:#BA7517}.dot.red{background:#E24B4A}
+.progress-bar{height:5px;border-radius:3px;background:var(--color-background-secondary);margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px}
+</style>
+
+<h2 class="sr-only">Maquette du dashboard de monitoring réseau</h2>
+
+<div class="dash">
+  <div class="sidebar">
+    <div class="sidebar-title">NAVIGATION</div>
+    <div class="nav-item active"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Vue globale</div>
+    <div class="nav-item"><i class="ti ti-activity" aria-hidden="true"></i>Débit</div>
+    <div class="nav-item"><i class="ti ti-clock" aria-hidden="true"></i>Latence</div>
+    <div class="nav-item"><i class="ti ti-alert-triangle" aria-hidden="true"></i>Erreurs</div>
+    <div class="nav-sep"></div>
+    <div class="sidebar-title">INTERFACES</div>
+    <div class="nav-item"><i class="ti ti-network" aria-hidden="true"></i>eth0</div>
+    <div class="nav-item"><i class="ti ti-wifi" aria-hidden="true"></i>wlan0</div>
+    <div class="nav-sep"></div>
+    <div class="nav-item"><i class="ti ti-settings" aria-hidden="true"></i>Paramètres</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title"><i class="ti ti-activity" style="font-size:16px;vertical-align:-2px;margin-right:6px" aria-hidden="true"></i>Monitoring réseau</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge"><span class="dot green"></span>Connecté</span>
+        <span style="font-size:12px;color:var(--color-text-tertiary)">Màj : 2s</span>
+        <button style="font-size:12px;padding:4px 10px"><i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i> Actualiser</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-arrow-down" aria-hidden="true"></i>Débit descendant</div>
+          <div class="kpi-value">42.3<span class="kpi-unit">Mbps</span></div>
+          <div class="kpi-trend up">↑ +3.1 vs dernière min</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-arrow-up" aria-hidden="true"></i>Débit montant</div>
+          <div class="kpi-value">8.7<span class="kpi-unit">Mbps</span></div>
+          <div class="kpi-trend ok">→ stable</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-clock" aria-hidden="true"></i>Latence moy.</div>
+          <div class="kpi-value">18<span class="kpi-unit">ms</span></div>
+          <div class="kpi-trend up">↓ −2ms vs dernière min</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label"><i class="ti ti-alert-triangle" aria-hidden="true"></i>Perte paquets</div>
+          <div class="kpi-value" style="color:#A32D2D">2.1<span class="kpi-unit" style="color:#A32D2D">%</span></div>
+          <div class="kpi-trend down">↑ +0.4% vs dernière min</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="card">
+          <div class="card-title"><i class="ti ti-chart-line" aria-hidden="true"></i>Débit en temps réel (dernières 60s)</div>
+          <div class="chart-placeholder">
+            <svg width="100%" viewBox="0 0 380 120" style="display:block">
+              <defs>
+                <linearGradient id="gd" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#378ADD" stop-opacity="0.18"/>
+                  <stop offset="100%" stop-color="#378ADD" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="gu" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#1D9E75" stop-opacity="0.15"/>
+                  <stop offset="100%" stop-color="#1D9E75" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="30" x2="380" y2="30" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+              <line x1="0" y1="60" x2="380" y2="60" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+              <line x1="0" y1="90" x2="380" y2="90" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+              <text x="2" y="28" font-size="9" fill="var(--color-text-tertiary)">60</text>
+              <text x="2" y="58" font-size="9" fill="var(--color-text-tertiary)">40</text>
+              <text x="2" y="88" font-size="9" fill="var(--color-text-tertiary)">20</text>
+              <text x="2" y="108" font-size="9" fill="var(--color-text-tertiary)">Mbps</text>
+              <path d="M18,85 C30,82 40,75 55,70 C70,65 80,72 95,68 C110,64 120,55 135,50 C150,45 160,58 175,52 C190,46 200,40 215,38 C230,36 240,48 255,42 C270,36 280,30 295,28 C310,26 320,35 335,32 C348,30 360,25 372,22" fill="none" stroke="#378ADD" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M18,85 C30,82 40,75 55,70 C70,65 80,72 95,68 C110,64 120,55 135,50 C150,45 160,58 175,52 C190,46 200,40 215,38 C230,36 240,48 255,42 C270,36 280,30 295,28 C310,26 320,35 335,32 C348,30 360,25 372,22 L372,110 L18,110 Z" fill="url(#gd)"/>
+              <path d="M18,100 C30,99 40,97 55,96 C70,95 80,97 95,95 C110,93 120,90 135,92 C150,94 160,96 175,94 C190,92 200,88 215,90 C230,92 240,95 255,93 C270,91 280,88 295,87 C310,86 320,89 335,88 C348,87 360,85 372,84" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M18,100 C30,99 40,97 55,96 C70,95 80,97 95,95 C110,93 120,90 135,92 C150,94 160,96 175,94 C190,92 200,88 215,90 C230,92 240,95 255,93 C270,91 280,88 295,87 C310,86 320,89 335,88 C348,87 360,85 372,84 L372,110 L18,110 Z" fill="url(#gu)"/>
+              <circle cx="372" cy="22" r="3" fill="#378ADD"/>
+              <circle cx="372" cy="84" r="3" fill="#1D9E75"/>
+            </svg>
+            <div style="display:flex;gap:16px;padding:4px 0 0;font-size:11px;color:var(--color-text-secondary)">
+              <span><span style="display:inline-block;width:12px;height:2px;background:#378ADD;vertical-align:middle;margin-right:4px"></span>↓ Download</span>
+              <span><span style="display:inline-block;width:12px;height:2px;background:#1D9E75;vertical-align:middle;margin-right:4px"></span>↑ Upload</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="ti ti-clock" aria-hidden="true"></i>Latence / RTT (60s)</div>
+          <svg width="100%" viewBox="0 0 160 120" style="display:block">
+            <line x1="0" y1="30" x2="160" y2="30" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+            <line x1="0" y1="70" x2="160" y2="70" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+            <line x1="0" y1="110" x2="160" y2="110" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
+            <text x="2" y="28" font-size="8" fill="var(--color-text-tertiary)">60ms</text>
+            <text x="2" y="68" font-size="8" fill="var(--color-text-tertiary)">30ms</text>
+            <text x="2" y="108" font-size="8" fill="var(--color-text-tertiary)">0ms</text>
+            <path d="M22,85 C30,80 38,75 46,78 C54,81 62,70 70,65 C78,60 86,68 94,62 C102,56 110,58 118,52 C126,46 134,55 142,50 C148,46 153,42 158,40" fill="none" stroke="#7F77DD" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="158" cy="40" r="2.5" fill="#7F77DD"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="bottom-row">
+        <div class="card">
+          <div class="card-title"><i class="ti ti-gauge" aria-hidden="true"></i>Utilisation réseau</div>
+          <div class="stat-row">
+            <span class="stat-label">Interface eth0</span>
+            <span class="stat-val">67%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:67%;background:#378ADD"></div></div>
+          <div style="margin-top:10px" class="stat-row">
+            <span class="stat-label">Interface wlan0</span>
+            <span class="stat-val">23%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:23%;background:#1D9E75"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="ti ti-list" aria-hidden="true"></i>Métriques clés</div>
+          <div class="stat-row"><span class="stat-label">RTT min</span><span class="stat-val">12 ms</span></div>
+          <div class="stat-row"><span class="stat-label">RTT max</span><span class="stat-val">34 ms</span></div>
+          <div class="stat-row"><span class="stat-label">Jitter</span><span class="stat-val">4.2 ms</span></div>
+          <div class="stat-row"><span class="stat-label">Taux d'erreur</span><span class="stat-val" style="color:#A32D2D">0.8%</span></div>
+          <div class="stat-row"><span class="stat-label">Connexions actives</span><span class="stat-val">142</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><i class="ti ti-server" aria-hidden="true"></i>Disponibilité</div>
+          <div style="text-align:center;padding:8px 0">
+            <div style="font-size:32px;font-weight:500;color:#0F6E56">99.8<span style="font-size:16px">%</span></div>
+            <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">dernières 24h</div>
+          </div>
+          <div class="stat-row"><span class="stat-label"><span class="dot green"></span>Temps en ligne</span><span class="stat-val">23h 57m</span></div>
+          <div class="stat-row"><span class="stat-label"><span class="dot red"></span>Interruptions</span><span class="stat-val">1</span></div>
+          <div class="stat-row"><span class="stat-label">Temps de réponse</span><span class="stat-val">21 ms</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
