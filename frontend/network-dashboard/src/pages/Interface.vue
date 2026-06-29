@@ -179,19 +179,11 @@
             <span class="font-medium text-gray-700">{{ s.value }}</span>
           </div>
           <div class="mt-3">
-            <div class="flex justify-between text-xs mb-1">
-              <span class="text-gray-400">
-                Utilisation ({{ bw.download_Mbps.toFixed(1) }} /
-                {{ maxSpeed }} Mbps)
-              </span>
-              <span class="font-medium text-gray-600">{{ usagePct }}%</span>
-            </div>
-            <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                class="h-full bg-blue-500 rounded-full transition-all duration-500"
-                :style="`width: ${usagePct}%`"
-              ></div>
-            </div>
+            <UsageBar
+              :label="`Utilisation (${bw.download_Mbps.toFixed(1)} / ${maxSpeed} Mbps)`"
+              :value="parseFloat(usagePct)"
+              class="mt-3"
+            />
           </div>
         </div>
 
@@ -245,6 +237,7 @@ import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useNetworkStore } from "../stores/networkStore";
 import KpiCard from "../components/layout/KpiCard.vue";
+import UsageBar from "../components/layout/UsageBar.vue";
 
 const store = useNetworkStore();
 const route = useRoute();

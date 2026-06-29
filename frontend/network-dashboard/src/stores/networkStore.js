@@ -9,10 +9,25 @@ export const useNetworkStore = defineStore("network", () => {
   const connected = ref(false);
 
   // ── Interfaces détectées ────────────────────────────
-  const interfaces = ref([
-    { name: "eth0", icon: "ti-network", up: true },
-    { name: "wlan0", icon: "ti-wifi", up: true },
-  ]);
+  const interfaces = ref([]);
+
+  async function fetchInterfaces() {
+    try {
+      const res = await axios.get(`${apiUrl.value}/api/interfaces`);
+      interfaces.value = res.data.map((iface) => ({
+        name: iface.name,
+        icon: iface.name.startsWith("w") ? "ti-wifi" : "ti-network",
+        up: iface.up,
+        monitored: true,
+      }));
+    } catch {
+      // backend pas encore prêt — fallback statique
+      interfaces.value = [
+        { name: "eth0", icon: "ti-network", up: true, monitored: true },
+        { name: "wlan0", icon: "ti-wifi", up: true, monitored: true },
+      ];
+    }
+  }
 
   // ── Métriques temps réel ────────────────────────────
   const bandwidth = ref({
@@ -67,6 +82,23 @@ export const useNetworkStore = defineStore("network", () => {
   // ── Paramètres ping ─────────────────────────────────
   const pingTargets = ref(["8.8.8.8", "1.1.1.1", "192.168.1.1"]);
 
+  // ── Thème ────────────────────────────────────────────
+  const theme = ref("light");
+
+  function applyTheme(val) {
+    theme.value = val;
+    const root = document.documentElement;
+    if (val === "dark") {
+      root.setAttribute("data-theme", "dark");
+    } else if (val === "light") {
+      root.setAttribute("data-theme", "light");
+    } else {
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      ).matches;
+      root.setAttribute("data-theme", prefersDark ? "dark" : "light");
+    }
+  }
   // ── Polling ─────────────────────────────────────────
   let _timer = null;
 
@@ -76,10 +108,9 @@ export const useNetworkStore = defineStore("network", () => {
       const [bwEth, bwWlan, latEth, latWlan] = await Promise.all([
         axios.get(`${apiUrl.value}/api/bandwidth?interface=eth0`),
         axios.get(`${apiUrl.value}/api/bandwidth?interface=wlan0`),
-        axios.get(`${apiUrl.value}/api/latency?host=8.8.8.8`),
-        axios.get(`${apiUrl.value}/api/latency?host=8.8.8.8`),
+        axios.get(`${apiUrl.value}/api/latency?interface=eth0&host=8.8.8.8`),
+        axios.get(`${apiUrl.value}/api/latency?interface=wlan0&host=8.8.8.8`),
       ]);
-
       bandwidth.value.eth0 = bwEth.data;
       bandwidth.value.wlan0 = bwWlan.data;
       latency.value.eth0 = latEth.data;
@@ -172,5 +203,7 @@ export const useNetworkStore = defineStore("network", () => {
     setInterval_,
     addError,
     fetchMetrics,
+    applyTheme,
+    fetchInterfaces,
   };
 });

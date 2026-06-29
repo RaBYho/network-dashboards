@@ -99,6 +99,7 @@
             </div>
           </div>
           <apexchart
+            ref="bandwidthChart"
             type="line"
             height="160"
             :options="bandwidthChartOptions"
@@ -130,6 +131,7 @@
             </div>
           </div>
           <apexchart
+            ref="latencyChart"
             type="line"
             height="160"
             :options="latencyChartOptions"
@@ -147,23 +149,14 @@
           >
             <i class="ti ti-gauge"></i> Utilisation réseau
           </div>
-          <div
+          <UsageBar
             v-for="iface in ifaceUsage"
             :key="iface.name"
+            :label="iface.name"
+            :value="parseFloat(iface.pct)"
+            :color="iface.name === 'wlan0' ? 'green' : 'blue'"
             class="mb-3 last:mb-0"
-          >
-            <div class="flex justify-between text-xs mb-1">
-              <span class="text-gray-500">{{ iface.name }}</span>
-              <span class="font-medium text-gray-700">{{ iface.pct }}%</span>
-            </div>
-            <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                class="h-full rounded-full transition-all duration-500"
-                :class="iface.color"
-                :style="`width: ${iface.pct}%`"
-              ></div>
-            </div>
-          </div>
+          />
         </div>
 
         <!-- Métriques clés -->
@@ -217,12 +210,38 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useNetworkStore } from "../stores/networkStore";
 import KpiCard from "../components/layout/KpiCard.vue";
+import UsageBar from "../components/layout/UsageBar.vue";
 
 const store = useNetworkStore();
+const bandwidthChart = ref(null);
+const latencyChart = ref(null);
 
+// Met à jour les séries sans réinitialiser le graphique
+watch(
+  () => store.history.eth0.download.length,
+  () => {
+    bandwidthChart.value?.updateSeries(
+      [
+        { name: "eth0 ↓", data: store.history.eth0.download },
+        { name: "wlan0 ↓", data: store.history.wlan0.download },
+      ],
+      false,
+      true,
+    ); // false = pas d'animation de reset, true = update fluide
+
+    latencyChart.value?.updateSeries(
+      [
+        { name: "eth0", data: store.history.eth0.rtt },
+        { name: "wlan0", data: store.history.wlan0.rtt },
+      ],
+      false,
+      true,
+    );
+  },
+);
 // ── Métriques calculées ──────────────────────────────
 const avgLatency = computed(
   () => (store.latency.eth0.avg_ms + store.latency.wlan0.avg_ms) / 2,
