@@ -35,7 +35,7 @@
           label="Débit descendant"
           :value="store.totalDownload.toFixed(1)"
           unit="Mbps"
-          sub="eth0 + wlan0"
+          sub="toutes interfaces"
           icon="ti-arrow-down"
           value-class="text-blue-600"
         />
@@ -43,7 +43,7 @@
           label="Débit montant"
           :value="store.totalUpload.toFixed(1)"
           unit="Mbps"
-          sub="eth0 + wlan0"
+          sub="toutes interfaces"
           icon="ti-arrow-up"
           value-class="text-blue-600"
         />
@@ -63,7 +63,7 @@
           label="Perte paquets"
           :value="avgPacketLoss.toFixed(1)"
           unit="%"
-          sub="eth0 + wlan0"
+          sub="toutes interfaces"
           icon="ti-alert-triangle"
           :value-class="
             avgPacketLoss > store.thresholds.packet_loss_pct
@@ -75,7 +75,6 @@
 
       <!-- Graphiques ligne 1 -->
       <div class="grid grid-cols-3 gap-3">
-        <!-- Graphique débit -->
         <div class="col-span-2 bg-white border border-gray-200 rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
             <span
@@ -85,17 +84,15 @@
             </span>
             <div class="flex gap-3 text-xs text-gray-400">
               <span
-                ><span
-                  class="inline-block w-3 h-0.5 bg-blue-500 align-middle mr-1"
-                ></span
-                >eth0 ↓</span
+                v-for="(iface, idx) in monitoredInterfaces"
+                :key="iface.name"
               >
-              <span
-                ><span
-                  class="inline-block w-3 h-0.5 bg-green-500 align-middle mr-1"
-                ></span
-                >wlan0 ↓</span
-              >
+                <span
+                  class="inline-block w-3 h-0.5 align-middle mr-1"
+                  :style="{ backgroundColor: colors[idx % colors.length] }"
+                ></span>
+                {{ iface.name }} ↓
+              </span>
             </div>
           </div>
           <apexchart
@@ -107,7 +104,6 @@
           />
         </div>
 
-        <!-- Graphique latence -->
         <div class="bg-white border border-gray-200 rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
             <span
@@ -117,17 +113,15 @@
             </span>
             <div class="flex gap-3 text-xs text-gray-400">
               <span
-                ><span
-                  class="inline-block w-3 h-0.5 bg-purple-500 align-middle mr-1"
-                ></span
-                >eth0</span
+                v-for="(iface, idx) in monitoredInterfaces"
+                :key="iface.name"
               >
-              <span
-                ><span
-                  class="inline-block w-3 h-0.5 bg-green-500 align-middle mr-1"
-                ></span
-                >wlan0</span
-              >
+                <span
+                  class="inline-block w-3 h-0.5 align-middle mr-1"
+                  :style="{ backgroundColor: colors[idx % colors.length] }"
+                ></span>
+                {{ iface.name }}
+              </span>
             </div>
           </div>
           <apexchart
@@ -154,7 +148,7 @@
             :key="iface.name"
             :label="iface.name"
             :value="parseFloat(iface.pct)"
-            :color="iface.name === 'wlan0' ? 'green' : 'blue'"
+            :color="iface.name.includes('w') ? 'green' : 'blue'"
             class="mb-3 last:mb-0"
           />
         </div>
@@ -176,7 +170,7 @@
           </div>
         </div>
 
-        <!-- Disponibilité -->
+        <!-- Disponibilité dynamique -->
         <div class="bg-white border border-gray-200 rounded-lg p-3">
           <div
             class="text-xs font-medium text-gray-500 flex items-center gap-1 mb-2"
@@ -184,10 +178,13 @@
             <i class="ti ti-server"></i> Disponibilité
           </div>
           <div class="text-center py-2">
-            <div class="text-3xl font-medium text-green-600">
-              99.8<span class="text-sm">%</span>
+            <div
+              class="text-3xl font-medium"
+              :class="uptimePercent >= 99 ? 'text-green-600' : 'text-amber-500'"
+            >
+              {{ uptimePercent.toFixed(1) }}<span class="text-sm">%</span>
             </div>
-            <div class="text-xs text-gray-400 mt-1">dernières 24h</div>
+            <div class="text-xs text-gray-400 mt-1">{{ uptimePeriod }}</div>
           </div>
           <div
             v-for="d in disponibilite"
@@ -210,7 +207,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useNetworkStore } from "../stores/networkStore";
 import KpiCard from "../components/layout/KpiCard.vue";
 import UsageBar from "../components/layout/UsageBar.vue";
@@ -219,95 +216,186 @@ const store = useNetworkStore();
 const bandwidthChart = ref(null);
 const latencyChart = ref(null);
 
-// Met à jour les séries sans réinitialiser le graphique
-watch(
-  () => store.history.eth0.download.length,
-  () => {
-    bandwidthChart.value?.updateSeries(
-      [
-        { name: "eth0 ↓", data: store.history.eth0.download },
-        { name: "wlan0 ↓", data: store.history.wlan0.download },
-      ],
-      false,
-      true,
-    ); // false = pas d'animation de reset, true = update fluide
-
-    latencyChart.value?.updateSeries(
-      [
-        { name: "eth0", data: store.history.eth0.rtt },
-        { name: "wlan0", data: store.history.wlan0.rtt },
-      ],
-      false,
-      true,
-    );
-  },
-);
-// ── Métriques calculées ──────────────────────────────
-const avgLatency = computed(
-  () => (store.latency.eth0.avg_ms + store.latency.wlan0.avg_ms) / 2,
-);
-const avgPacketLoss = computed(
-  () =>
-    (store.latency.eth0.packet_loss_pct + store.latency.wlan0.packet_loss_pct) /
-    2,
-);
-
-// ── Utilisation réseau (% par rapport à 1000 Mbps max) ──
-const ifaceUsage = computed(() => [
-  {
-    name: "eth0",
-    pct: Math.min(
-      ((store.bandwidth.eth0.download_Mbps / 1000) * 100).toFixed(1),
-      100,
-    ),
-    color: "bg-blue-500",
-  },
-  {
-    name: "wlan0",
-    pct: Math.min(
-      ((store.bandwidth.wlan0.download_Mbps / 300) * 100).toFixed(1),
-      100,
-    ),
-    color: "bg-green-500",
-  },
-]);
-
-// ── Métriques clés ───────────────────────────────────
-const keyMetrics = computed(() => [
-  {
-    label: "RTT min (eth0)",
-    value: `${store.latency.eth0.min_ms} ms`,
-    class: "text-gray-700",
-  },
-  {
-    label: "RTT max (eth0)",
-    value: `${store.latency.eth0.max_ms} ms`,
-    class: "text-gray-700",
-  },
-  {
-    label: "Jitter (eth0)",
-    value: `${store.latency.eth0.jitter_ms} ms`,
-    class: "text-gray-700",
-  },
-  {
-    label: "Jitter (wlan0)",
-    value: `${store.latency.wlan0.jitter_ms} ms`,
-    class:
-      store.latency.wlan0.jitter_ms > store.thresholds.jitter_ms
-        ? "text-amber-500"
-        : "text-gray-700",
-  },
-  { label: "Taux d'erreur", value: "0.8%", class: "text-green-600" },
-  { label: "Connexions", value: "142", class: "text-gray-700" },
-]);
-
-const disponibilite = [
-  { label: "Temps en ligne", value: "23h 57m", dot: "bg-green-500" },
-  { label: "Interruptions", value: "1", dot: "bg-red-500" },
-  { label: "Tps de réponse", value: "21 ms", dot: "bg-green-500" },
+// Couleurs pour les graphiques
+const colors = [
+  "#3B82F6",
+  "#22C55E",
+  "#8B5CF6",
+  "#F59E0B",
+  "#EF4444",
+  "#EC4899",
 ];
 
-// ── Options ApexCharts — Débit ───────────────────────
+// Interfaces surveillées
+const monitoredInterfaces = computed(() =>
+  store.interfaces.filter((i) => i.monitored),
+);
+
+// ── Métriques calculées (agrégation sur toutes les interfaces) ──
+const avgLatency = computed(() => {
+  const latencies = monitoredInterfaces.value.map(
+    (i) => store.latency[i.name]?.avg_ms || 0,
+  );
+  return latencies.length
+    ? latencies.reduce((a, b) => a + b, 0) / latencies.length
+    : 0;
+});
+
+const avgPacketLoss = computed(() => {
+  const losses = monitoredInterfaces.value.map(
+    (i) => store.latency[i.name]?.packet_loss_pct || 0,
+  );
+  return losses.length ? losses.reduce((a, b) => a + b, 0) / losses.length : 0;
+});
+
+// Utilisation réseau (pourcentage par rapport à 1000 Mbps ou 300 Mbps)
+const ifaceUsage = computed(() =>
+  monitoredInterfaces.value.map((iface) => {
+    const bw = store.bandwidth[iface.name] || { download_Mbps: 0 };
+    const max = iface.name.includes("w") ? 300 : 1000;
+    return {
+      name: iface.name,
+      pct: Math.min(((bw.download_Mbps / max) * 100).toFixed(1), 100),
+    };
+  }),
+);
+
+// Métriques clés (une sélection pour la première interface surveillée)
+const keyMetrics = computed(() => {
+  const firstIface = monitoredInterfaces.value[0];
+  if (!firstIface) return [];
+  const lat = store.latency[firstIface.name] || {};
+  return [
+    {
+      label: `RTT min (${firstIface.name})`,
+      value: `${(lat.min_ms || 0).toFixed(0)} ms`,
+      class: "text-gray-700",
+    },
+    {
+      label: `RTT max (${firstIface.name})`,
+      value: `${(lat.max_ms || 0).toFixed(0)} ms`,
+      class: "text-gray-700",
+    },
+    {
+      label: `Jitter (${firstIface.name})`,
+      value: `${(lat.jitter_ms || 0).toFixed(1)} ms`,
+      class:
+        (lat.jitter_ms || 0) > store.thresholds.jitter_ms
+          ? "text-amber-500"
+          : "text-gray-700",
+    },
+    {
+      label: "Taux d'erreur",
+      value: `${(lat.packet_loss_pct || 0).toFixed(1)}%`,
+      class: "text-green-600",
+    },
+    { label: "Connexions", value: "142", class: "text-gray-700" }, // Peut rester statique si pas de source
+  ];
+});
+
+// ── Disponibilité dynamique ──────────────────────────
+const connectionHistory = ref([]); // stocke les derniers statuts (true/false)
+const MAX_HISTORY = 100;
+const disconnectionCount = ref(0);
+const lastConnectedTime = ref(Date.now());
+const onlineDuration = ref(0);
+let onlineTimer = null;
+
+// Pourcentage de temps disponible sur les derniers échantillons
+const uptimePercent = computed(() => {
+  if (connectionHistory.value.length === 0) return 100;
+  const successes = connectionHistory.value.filter(Boolean).length;
+  return (successes / connectionHistory.value.length) * 100;
+});
+
+// Période d'analyse (basée sur l'intervalle et le nombre de points)
+const uptimePeriod = computed(() => {
+  const minutes = Math.round((MAX_HISTORY * store.interval) / 60);
+  return `dernières ${minutes} min`;
+});
+
+// Durée en ligne formatée
+const formatDuration = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  return `${h > 0 ? h + "h " : ""}${m}m ${s}s`;
+};
+
+// Mise à jour de la durée en ligne
+function updateOnlineDuration() {
+  if (store.connected) {
+    onlineDuration.value = Math.floor(
+      (Date.now() - lastConnectedTime.value) / 1000,
+    );
+  } else {
+    onlineDuration.value = 0;
+  }
+}
+
+// Surveille les changements de connexion
+watch(
+  () => store.connected,
+  (newVal, oldVal) => {
+    // Ajouter le nouveau statut à l'historique
+    connectionHistory.value.push(newVal);
+    if (connectionHistory.value.length > MAX_HISTORY) {
+      connectionHistory.value.shift();
+    }
+
+    // Détection d'une déconnexion
+    if (oldVal === true && newVal === false) {
+      disconnectionCount.value++;
+    }
+
+    // Mise à jour du temps de connexion
+    if (newVal === true && oldVal === false) {
+      lastConnectedTime.value = Date.now();
+    }
+
+    // Réinitialiser le timer de durée
+    clearInterval(onlineTimer);
+    if (newVal) {
+      onlineTimer = setInterval(updateOnlineDuration, 1000);
+    } else {
+      onlineDuration.value = 0;
+    }
+  },
+);
+
+// À l'initialisation, on remplit l'historique avec l'état actuel
+onMounted(() => {
+  // Remplir avec l'état actuel (considérer qu'on vient de démarrer, donc 100% pour l'instant)
+  connectionHistory.value = Array(MAX_HISTORY).fill(store.connected);
+  if (store.connected) {
+    onlineTimer = setInterval(updateOnlineDuration, 1000);
+  }
+});
+
+onUnmounted(() => {
+  clearInterval(onlineTimer);
+});
+
+// ── Données pour la section Disponibilité ────────────
+const disponibilite = computed(() => [
+  {
+    label: "Temps en ligne",
+    value: store.connected ? formatDuration(onlineDuration.value) : "0s",
+    dot: "bg-green-500",
+  },
+  {
+    label: "Interruptions",
+    value: disconnectionCount.value,
+    dot: "bg-red-500",
+  },
+  {
+    label: "Tps de réponse",
+    value: `${avgLatency.value.toFixed(0)} ms`,
+    dot: "bg-green-500",
+  },
+]);
+
+// ── Options ApexCharts – Débit ───────────────────────
 const bandwidthChartOptions = computed(() => ({
   chart: {
     id: "bandwidth",
@@ -320,9 +408,10 @@ const bandwidthChartOptions = computed(() => ({
     background: "transparent",
   },
   stroke: { curve: "smooth", width: 2 },
-  colors: ["#3B82F6", "#22C55E"],
+  colors: colors,
   xaxis: {
-    categories: store.history.eth0.timestamps,
+    categories:
+      store.history[monitoredInterfaces.value[0]?.name]?.timestamps || [],
     labels: { show: false },
     axisBorder: { show: false },
     axisTicks: { show: false },
@@ -338,12 +427,14 @@ const bandwidthChartOptions = computed(() => ({
   tooltip: { theme: "light", y: { formatter: (v) => v.toFixed(2) + " Mbps" } },
 }));
 
-const bandwidthSeries = computed(() => [
-  { name: "eth0 ↓", data: store.history.eth0.download },
-  { name: "wlan0 ↓", data: store.history.wlan0.download },
-]);
+const bandwidthSeries = computed(() => {
+  return monitoredInterfaces.value.map((iface, idx) => ({
+    name: `${iface.name} ↓`,
+    data: store.history[iface.name]?.download || [],
+  }));
+});
 
-// ── Options ApexCharts — Latence ─────────────────────
+// ── Options ApexCharts – Latence ─────────────────────
 const latencyChartOptions = computed(() => ({
   chart: {
     id: "latency",
@@ -356,9 +447,10 @@ const latencyChartOptions = computed(() => ({
     background: "transparent",
   },
   stroke: { curve: "smooth", width: 2 },
-  colors: ["#8B5CF6", "#22C55E"],
+  colors: colors,
   xaxis: {
-    categories: store.history.eth0.timestamps,
+    categories:
+      store.history[monitoredInterfaces.value[0]?.name]?.timestamps || [],
     labels: { show: false },
     axisBorder: { show: false },
     axisTicks: { show: false },
@@ -391,8 +483,38 @@ const latencyChartOptions = computed(() => ({
   tooltip: { theme: "light", y: { formatter: (v) => v.toFixed(1) + " ms" } },
 }));
 
-const latencySeries = computed(() => [
-  { name: "eth0", data: store.history.eth0.rtt },
-  { name: "wlan0", data: store.history.wlan0.rtt },
-]);
+const latencySeries = computed(() => {
+  return monitoredInterfaces.value.map((iface) => ({
+    name: `${iface.name} RTT`,
+    data: store.history[iface.name]?.rtt || [],
+  }));
+});
+
+// Mise à jour des graphiques sans reset
+watch(
+  () => store.history,
+  () => {
+    if (bandwidthChart.value) {
+      bandwidthChart.value.updateSeries(
+        monitoredInterfaces.value.map((iface) => ({
+          name: `${iface.name} ↓`,
+          data: store.history[iface.name]?.download || [],
+        })),
+        false,
+        true,
+      );
+    }
+    if (latencyChart.value) {
+      latencyChart.value.updateSeries(
+        monitoredInterfaces.value.map((iface) => ({
+          name: `${iface.name} RTT`,
+          data: store.history[iface.name]?.rtt || [],
+        })),
+        false,
+        true,
+      );
+    }
+  },
+  { deep: true },
+);
 </script>

@@ -170,19 +170,37 @@
           >
             <i class="ti ti-database"></i> Trafic cumulé
           </div>
-          <div
-            v-for="s in trafficStats"
-            :key="s.label"
-            class="flex justify-between items-center py-2 border-b border-gray-100 last:border-none text-xs"
-          >
-            <span class="text-gray-500">{{ s.label }}</span>
-            <span class="font-medium text-gray-700">{{ s.value }}</span>
+          <!-- Utilisation des totaux dynamiques -->
+          <div class="text-xs">
+            <div class="flex justify-between py-2 border-b border-gray-100">
+              <span class="text-gray-500">Total reçu</span>
+              <span class="font-medium text-gray-700">
+                {{ (totals.received / 1_048_576).toFixed(2) }} Mo
+              </span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-100">
+              <span class="text-gray-500">Total envoyé</span>
+              <span class="font-medium text-gray-700">
+                {{ (totals.sent / 1_048_576).toFixed(2) }} Mo
+              </span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-100">
+              <span class="text-gray-500">Paquets reçus</span>
+              <span class="font-medium text-gray-700">
+                {{ (hist.download.length * 1000).toLocaleString() }}
+              </span>
+            </div>
+            <div class="flex justify-between py-2">
+              <span class="text-gray-500">Paquets envoyés</span>
+              <span class="font-medium text-gray-700">
+                {{ (hist.upload.length * 300).toLocaleString() }}
+              </span>
+            </div>
           </div>
           <div class="mt-3">
             <UsageBar
               :label="`Utilisation (${bw.download_Mbps.toFixed(1)} / ${maxSpeed} Mbps)`"
               :value="parseFloat(usagePct)"
-              class="mt-3"
             />
           </div>
         </div>
@@ -245,7 +263,7 @@ const route = useRoute();
 // ── Interface courante ───────────────────────────────
 const ifaceName = computed(() => route.params.name);
 const ifaceIcon = computed(() =>
-  ifaceName.value === "wlan0" ? "ti-wifi" : "ti-network",
+  ifaceName.value?.includes("w") ? "ti-wifi" : "ti-network",
 );
 const isUp = computed(
   () => store.interfaces.find((i) => i.name === ifaceName.value)?.up ?? false,
@@ -276,6 +294,9 @@ const hist = computed(
     },
 );
 
+// ── Totaux cumulés dynamiques ────────────────────────
+const totals = computed(() => store.getInterfaceTotal(ifaceName.value));
+
 // ── Sélecteur de période ─────────────────────────────
 const periods = [
   { label: "1 min", value: "1m" },
@@ -288,51 +309,28 @@ const activePeriod = ref("1m");
 const connexions = computed(
   () => store.errors.filter((e) => e.iface === ifaceName.value).length + 82,
 );
-const maxSpeed = computed(() => (ifaceName.value === "wlan0" ? 300 : 1000));
+const maxSpeed = computed(() => (ifaceName.value?.includes("w") ? 300 : 1000));
 const usagePct = computed(() =>
   Math.min(((bw.value.download_Mbps / maxSpeed.value) * 100).toFixed(1), 100),
 );
 
-// ── Trafic cumulé ────────────────────────────────────
-const totalReceived = computed(() =>
-  (
-    (hist.value.download.reduce((a, b) => a + b, 0) * store.interval) /
-    8
-  ).toFixed(0),
-);
-const totalSent = computed(() =>
-  ((hist.value.upload.reduce((a, b) => a + b, 0) * store.interval) / 8).toFixed(
-    0,
-  ),
-);
-const totalPackets = computed(() =>
-  (hist.value.download.length * 1000).toLocaleString(),
-);
-
-const trafficStats = computed(() => [
-  { label: "Total reçu", value: `${totalReceived.value} Mo` },
-  { label: "Total envoyé", value: `${totalSent.value} Mo` },
-  { label: "Paquets reçus", value: totalPackets.value },
-  {
-    label: "Paquets envoyés",
-    value: Math.floor(hist.value.upload.length * 300).toLocaleString(),
-  },
-]);
-
-// ── Infos interface ──────────────────────────────────
+// ── Informations interface (dynamiques depuis le store) ──
 const ifaceInfos = computed(() => {
-  const isWlan = ifaceName.value === "wlan0";
+  const iface = store.interfaces.find((i) => i.name === ifaceName.value) || {};
   return [
-    { label: "Adresse IP", value: isWlan ? "192.168.1.87" : "192.168.1.42" },
-    { label: "Masque", value: "255.255.255.0" },
-    { label: "Passerelle", value: "192.168.1.1" },
-    {
-      label: "Adresse MAC",
-      value: isWlan ? "b8:27:eb:aa:bb:cc" : "a4:c3:f0:12:34:56",
-    },
+    { label: "Adresse IP", value: iface.ipv4 || "—" },
+    { label: "Masque", value: iface.netmask || "—" },
+    { label: "Passerelle", value: "192.168.1.1" }, // pas de source simple en standard
+    { label: "Adresse MAC", value: iface.mac || "—" },
     { label: "MTU", value: "1500 octets" },
-    { label: "Vitesse max", value: isWlan ? "300 Mbps" : "1000 Mbps" },
-    { label: "Type", value: isWlan ? "Wi-Fi" : "Filaire" },
+    {
+      label: "Vitesse max",
+      value: ifaceName.value?.includes("w") ? "300 Mbps" : "1000 Mbps",
+    },
+    {
+      label: "Type",
+      value: ifaceName.value?.includes("w") ? "Wi-Fi" : "Filaire",
+    },
   ];
 });
 
@@ -353,11 +351,17 @@ const errorStats = computed(() => [
     label: "Paquets perdus ↓",
     val: Math.floor(lat.value.packet_loss_pct * 10),
   },
-  { label: "Paquets perdus ↑", val: Math.floor(lat.value.packet_loss_pct * 5) },
-  { label: "Taux d'erreur", val: `${lat.value.packet_loss_pct.toFixed(2)}%` },
+  {
+    label: "Paquets perdus ↑",
+    val: Math.floor(lat.value.packet_loss_pct * 5),
+  },
+  {
+    label: "Taux d'erreur",
+    val: `${lat.value.packet_loss_pct.toFixed(2)}%`,
+  },
 ]);
 
-// ── Connexions TCP ───────────────────────────────────
+// ── Connexions TCP (statiques pour l'instant) ─────────
 const tcpStates = computed(() => [
   { state: "ESTABLISHED", count: 82, class: "bg-green-50 text-green-700" },
   { state: "TIME_WAIT", count: 11, class: "bg-amber-50 text-amber-700" },

@@ -17,11 +17,12 @@ import AppSidebar from "./components/layout/AppSidebar.vue";
 import { useNetworkStore } from "./stores/networkStore";
 
 const networkStore = useNetworkStore();
-onMounted(() => networkStore.startPolling());
-onUnmounted(() => networkStore.stopPolling());
-onMounted(() => {
-  networkStore.fetchInterfaces();
-  networkStore.startPolling();
+onMounted(async () => {
+  await networkStore.fetchInterfaces(); // ✅ attendre la réponse
+  networkStore.startPolling(); // ✅ puis démarrer le polling
+});
+onUnmounted(() => {
+  networkStore.stopPolling();
 });
 </script>
 <style>

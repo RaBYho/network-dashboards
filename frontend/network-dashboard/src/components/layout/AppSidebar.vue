@@ -43,7 +43,7 @@
       </div>
 
       <RouterLink
-        v-for="iface in networkStore.interfaces"
+        v-for="iface in networkStore.interfaces.filter((i) => i.monitored)"
         :key="iface.name"
         :to="`/interface/${iface.name}`"
         class="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 cursor-pointer transition-colors hover:bg-gray-100 hover:text-gray-900"

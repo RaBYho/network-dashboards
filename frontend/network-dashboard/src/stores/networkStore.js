@@ -3,65 +3,68 @@ import { ref, computed } from "vue";
 import axios from "axios";
 
 export const useNetworkStore = defineStore("network", () => {
-  // ── Config ──────────────────────────────────────────
+  // ── Configuration ──────────────────────────────────
   const apiUrl = ref("http://localhost:8000");
   const interval = ref(2); // secondes
   const connected = ref(false);
 
-  // ── Interfaces détectées ────────────────────────────
-  const interfaces = ref([]);
+  const api = axios.create({
+    baseURL: apiUrl.value,
+    timeout: 8000, // 8 secondes max par requête
+  });
+
+  // ── Interfaces surveillées ─────────────────────────
+  const interfaces = ref([]); // { name, icon, up, monitored, ipv4, mac, ... }
 
   async function fetchInterfaces() {
     try {
-      const res = await axios.get(`${apiUrl.value}/api/interfaces`);
+      const res = await api.get("/api/interfaces");
       interfaces.value = res.data.map((iface) => ({
         name: iface.name,
-        icon: iface.name.startsWith("w") ? "ti-wifi" : "ti-network",
+        icon:
+          iface.name.toLowerCase().includes("wlan") ||
+          iface.name.toLowerCase().includes("wi")
+            ? "ti-wifi"
+            : "ti-network",
         up: iface.up,
-        monitored: true,
+        monitored: iface.up, // par défaut
+        ipv4: iface.ipv4 || "",
+        netmask: iface.netmask || "",
+        mac: iface.mac || "",
+        ipv6: iface.ipv6 || "",
       }));
     } catch {
-      // backend pas encore prêt — fallback statique
-      interfaces.value = [
-        { name: "eth0", icon: "ti-network", up: true, monitored: true },
-        { name: "wlan0", icon: "ti-wifi", up: true, monitored: true },
-      ];
+      // fallback – liste vide, sera géré par le polling
+      interfaces.value = [];
     }
   }
 
-  // ── Métriques temps réel ────────────────────────────
-  const bandwidth = ref({
-    eth0: { download_Mbps: 0, upload_Mbps: 0 },
-    wlan0: { download_Mbps: 0, upload_Mbps: 0 },
-  });
+  // ── Métriques temps réel (dynamiques) ─────────────
+  const bandwidth = ref({}); // { [ifaceName]: { download_Mbps, upload_Mbps, bytes_recv, bytes_sent } }
+  const latency = ref({}); // { [ifaceName]: { avg_ms, min_ms, max_ms, jitter_ms, packet_loss_pct } }
 
-  const latency = ref({
-    eth0: { avg_ms: 0, min_ms: 0, max_ms: 0, jitter_ms: 0, packet_loss_pct: 0 },
-    wlan0: {
-      avg_ms: 0,
-      min_ms: 0,
-      max_ms: 0,
-      jitter_ms: 0,
-      packet_loss_pct: 0,
-    },
-  });
-
-  const errors = ref([]); // journal des erreurs
-
-  // ── Historique pour les graphiques (60 points max) ──
-  const history = ref({
-    eth0: { download: [], upload: [], rtt: [], timestamps: [] },
-    wlan0: { download: [], upload: [], rtt: [], timestamps: [] },
-  });
-
+  // ── Historique pour les graphiques (60 points) ─────
+  const history = ref({}); // { [ifaceName]: { download: [], upload: [], rtt: [], timestamps: [] } }
   const MAX_POINTS = 60;
 
-  function pushHistory(iface, bw, lat) {
-    const h = history.value[iface];
+  function initHistory(ifaceName) {
+    if (!history.value[ifaceName]) {
+      history.value[ifaceName] = {
+        download: [],
+        upload: [],
+        rtt: [],
+        timestamps: [],
+      };
+    }
+  }
+
+  function pushHistory(ifaceName, bw, lat) {
+    initHistory(ifaceName);
+    const h = history.value[ifaceName];
     const now = new Date().toLocaleTimeString();
-    h.download.push(bw.download_Mbps);
-    h.upload.push(bw.upload_Mbps);
-    h.rtt.push(lat.avg_ms);
+    h.download.push(Number(bw.download_Mbps) || 0);
+    h.upload.push(Number(bw.upload_Mbps) || 0);
+    h.rtt.push(Number(lat.avg_ms) || 0);
     h.timestamps.push(now);
     if (h.download.length > MAX_POINTS) {
       h.download.shift();
@@ -71,65 +74,32 @@ export const useNetworkStore = defineStore("network", () => {
     }
   }
 
-  // ── Seuils d'alerte ─────────────────────────────────
+  // ── Seuils & ping ──────────────────────────────────
   const thresholds = ref({
     latency_ms: 50,
     packet_loss_pct: 10,
     jitter_ms: 20,
     error_rate_pct: 5,
   });
-
-  // ── Paramètres ping ─────────────────────────────────
   const pingTargets = ref(["8.8.8.8", "1.1.1.1", "192.168.1.1"]);
+  const errors = ref([]);
 
-  // ── Thème ────────────────────────────────────────────
-  const theme = ref("light");
-
-  function applyTheme(val) {
-    theme.value = val;
-    const root = document.documentElement;
-    if (val === "dark") {
-      root.setAttribute("data-theme", "dark");
-    } else if (val === "light") {
-      root.setAttribute("data-theme", "light");
-    } else {
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      ).matches;
-      root.setAttribute("data-theme", prefersDark ? "dark" : "light");
-    }
-  }
-  // ── Polling ─────────────────────────────────────────
-  let _timer = null;
-
-  async function fetchMetrics() {
-    try {
-      // Ces endpoints seront fournis par ton équipier
-      const [bwEth, bwWlan, latEth, latWlan] = await Promise.all([
-        axios.get(`${apiUrl.value}/api/bandwidth?interface=eth0`),
-        axios.get(`${apiUrl.value}/api/bandwidth?interface=wlan0`),
-        axios.get(`${apiUrl.value}/api/latency?interface=eth0&host=8.8.8.8`),
-        axios.get(`${apiUrl.value}/api/latency?interface=wlan0&host=8.8.8.8`),
-      ]);
-      bandwidth.value.eth0 = bwEth.data;
-      bandwidth.value.wlan0 = bwWlan.data;
-      latency.value.eth0 = latEth.data;
-      latency.value.wlan0 = latWlan.data;
-
-      pushHistory("eth0", bwEth.data, latEth.data);
-      pushHistory("wlan0", bwWlan.data, latWlan.data);
-
-      connected.value = true;
-      checkThresholds();
-    } catch {
-      connected.value = false;
-    }
+  function addError(severity, iface, message, value) {
+    errors.value.unshift({
+      id: Date.now(),
+      timestamp: new Date().toLocaleTimeString(),
+      severity,
+      iface,
+      message,
+      value,
+    });
+    if (errors.value.length > 200) errors.value.pop();
   }
 
   function checkThresholds() {
-    const now = new Date().toLocaleTimeString();
-    for (const iface of ["eth0", "wlan0"]) {
+    for (const iface of getMonitoredInterfaces()) {
       const lat = latency.value[iface];
+      if (!lat) continue;
       if (lat.avg_ms > thresholds.value.latency_ms) {
         addError(
           "warn",
@@ -149,42 +119,209 @@ export const useNetworkStore = defineStore("network", () => {
     }
   }
 
-  function addError(severity, iface, message, value) {
-    errors.value.unshift({
-      id: Date.now(),
-      timestamp: new Date().toLocaleTimeString(),
-      severity,
-      iface,
-      message,
-      value,
+  // ── Polling ─────────────────────────────────────────
+  let _timer = null;
+
+  function getMonitoredInterfaces() {
+    return interfaces.value.filter((i) => i.monitored).map((i) => i.name);
+  }
+
+  async function fetchMetrics() {
+    const monitored = getMonitoredInterfaces();
+    if (monitored.length === 0) {
+      connected.value = false;
+      return;
+    }
+
+    // Construire les promesses pour toutes les interfaces surveillées
+    const bandwidthPromises = monitored.map((iface) =>
+      api.get(`/api/bandwidth?interface=${iface}`).catch(() => null),
+    );
+    const latencyPromises = monitored.map((iface) =>
+      api.get(`/api/latency?interface=${iface}&host=8.8.8.8`).catch(() => null),
+    );
+
+    const bwResults = await Promise.allSettled(bandwidthPromises);
+    const latResults = await Promise.allSettled(latencyPromises);
+
+    let anySuccess = false;
+
+    // Mise à jour du bandwidth
+    monitored.forEach((iface, idx) => {
+      if (bwResults[idx].status === "fulfilled" && bwResults[idx].value) {
+        const data = bwResults[idx].value.data;
+        bandwidth.value[iface] = {
+          download_Mbps: Number(data.download_Mbps) || 0,
+          upload_Mbps: Number(data.upload_Mbps) || 0,
+          bytes_recv: Number(data.bytes_recv) || 0,
+          bytes_sent: Number(data.bytes_sent) || 0,
+        };
+        anySuccess = true;
+      } else {
+        // conserver l'ancienne structure si existe, sinon initialiser
+        if (!bandwidth.value[iface]) {
+          bandwidth.value[iface] = {
+            download_Mbps: 0,
+            upload_Mbps: 0,
+            bytes_recv: 0,
+            bytes_sent: 0,
+          };
+        }
+      }
     });
-    if (errors.value.length > 200) errors.value.pop();
+
+    // Mise à jour de la latence
+    monitored.forEach((iface, idx) => {
+      if (latResults[idx].status === "fulfilled" && latResults[idx].value) {
+        const data = latResults[idx].value.data;
+        latency.value[iface] = {
+          avg_ms: Number(data.avg_ms) || 0,
+          min_ms: Number(data.min_ms) || 0,
+          max_ms: Number(data.max_ms) || 0,
+          jitter_ms: Number(data.jitter_ms) || 0,
+          packet_loss_pct: Number(data.packet_loss_pct) || 0,
+        };
+        anySuccess = true;
+      } else {
+        if (!latency.value[iface]) {
+          latency.value[iface] = {
+            avg_ms: 0,
+            min_ms: 0,
+            max_ms: 0,
+            jitter_ms: 0,
+            packet_loss_pct: 0,
+          };
+        }
+      }
+    });
+
+    // Alimenter l'historique pour chaque interface
+    monitored.forEach((iface) => {
+      const bw = bandwidth.value[iface] || {
+        download_Mbps: 0,
+        upload_Mbps: 0,
+      };
+      const lat = latency.value[iface] || { avg_ms: 0 };
+      pushHistory(iface, bw, lat);
+    });
+
+    // ✅ Mise à zéro si tout échoue
+    if (!anySuccess) {
+      monitored.forEach((iface) => {
+        bandwidth.value[iface] = {
+          download_Mbps: 0,
+          upload_Mbps: 0,
+          bytes_recv: bandwidth.value[iface]?.bytes_recv || 0, // garder les compteurs pour ne pas perdre le cumul
+          bytes_sent: bandwidth.value[iface]?.bytes_sent || 0,
+        };
+        latency.value[iface] = {
+          avg_ms: 0,
+          min_ms: 0,
+          max_ms: 0,
+          jitter_ms: 0,
+          packet_loss_pct: 0,
+        };
+      });
+    }
+
+    connected.value = anySuccess;
+    checkThresholds();
+
+    // Initialiser les compteurs de session après le premier succès
+    if (anySuccess && !sessionStarted.value) {
+      initSessionCounters();
+    }
   }
 
   function startPolling() {
     fetchMetrics();
+    if (_timer) clearInterval(_timer);
     _timer = setInterval(fetchMetrics, interval.value * 1000);
   }
 
   function stopPolling() {
     clearInterval(_timer);
+    _timer = null;
   }
 
   function setInterval_(val) {
     interval.value = val;
-    stopPolling();
-    startPolling();
+    if (_timer) {
+      stopPolling();
+      startPolling();
+    }
   }
 
-  // ── Getters ─────────────────────────────────────────
-  const totalDownload = computed(
-    () =>
-      bandwidth.value.eth0.download_Mbps + bandwidth.value.wlan0.download_Mbps,
-  );
-  const totalUpload = computed(
-    () => bandwidth.value.eth0.upload_Mbps + bandwidth.value.wlan0.upload_Mbps,
-  );
+  // ── Compteurs cumulatifs par session ───────────────
+  const sessionCounters = ref({}); // { ifaceName: { bytes_recv: 0, bytes_sent: 0 } }
+  const sessionStarted = ref(false);
 
+  function initSessionCounters() {
+    if (sessionStarted.value) return;
+    const monitored = getMonitoredInterfaces();
+    monitored.forEach((iface) => {
+      const bw = bandwidth.value[iface];
+      if (bw && bw.bytes_recv !== undefined) {
+        sessionCounters.value[iface] = {
+          bytes_recv: bw.bytes_recv,
+          bytes_sent: bw.bytes_sent,
+        };
+      }
+    });
+    sessionStarted.value = true;
+  }
+
+  function resetSession() {
+    sessionCounters.value = {};
+    sessionStarted.value = false;
+  }
+
+  // Retourne le total reçu/envoyé depuis le début de la session pour une interface
+  function getInterfaceTotal(ifaceName) {
+    const bw = bandwidth.value[ifaceName];
+    const session = sessionCounters.value[ifaceName];
+    if (!bw || !session) return { received: 0, sent: 0 };
+    const received = bw.bytes_recv - session.bytes_recv;
+    const sent = bw.bytes_sent - session.bytes_sent;
+    return { received, sent };
+  }
+
+  // ── Thème ───────────────────────────────────────────
+  const theme = ref("light");
+  function applyTheme(val) {
+    theme.value = val;
+    const root = document.documentElement;
+    root.classList.remove("dark");
+    if (val === "dark") {
+      root.classList.add("dark");
+      root.setAttribute("data-theme", "dark");
+    } else if (val === "light") {
+      root.setAttribute("data-theme", "light");
+    } else {
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        root.classList.add("dark");
+        root.setAttribute("data-theme", "dark");
+      } else {
+        root.setAttribute("data-theme", "light");
+      }
+    }
+  }
+
+  // ── Getters globaux ────────────────────────────────
+  const totalDownload = computed(() => {
+    return Object.values(bandwidth.value).reduce(
+      (sum, b) => sum + (b.download_Mbps || 0),
+      0,
+    );
+  });
+  const totalUpload = computed(() => {
+    return Object.values(bandwidth.value).reduce(
+      (sum, b) => sum + (b.upload_Mbps || 0),
+      0,
+    );
+  });
+
+  // ── Retour ──────────────────────────────────────────
   return {
     apiUrl,
     interval,
@@ -192,10 +329,10 @@ export const useNetworkStore = defineStore("network", () => {
     interfaces,
     bandwidth,
     latency,
-    errors,
     history,
     thresholds,
     pingTargets,
+    errors,
     totalDownload,
     totalUpload,
     startPolling,
@@ -205,5 +342,7 @@ export const useNetworkStore = defineStore("network", () => {
     fetchMetrics,
     applyTheme,
     fetchInterfaces,
+    getInterfaceTotal,
+    resetSession,
   };
 });
