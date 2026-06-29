@@ -677,7 +677,9 @@ function onTargetInput() {
   targetValid.value = true;
   targetError.value = "";
 }
-
+function removeTarget(idx) {
+  form.pingTargets.splice(idx, 1);
+}
 // ── Interfaces ───────────────────────────────────────
 const newIface = ref("");
 
@@ -690,6 +692,7 @@ function addIface() {
 }
 
 // ── Test de connexion API ────────────────────────────
+// ── Test de connexion API ────────────────────────────
 const testing = ref(false);
 const testMessage = ref("");
 const testSuccess = ref(false);
@@ -698,12 +701,17 @@ async function testConnection() {
   testing.value = true;
   testMessage.value = "";
   try {
-    await axios.get(`${form.apiUrl}/api/bandwidth`, { timeout: 3000 });
+    // Utiliser un endpoint sans paramètre obligatoire
+    await axios.get(`${form.apiUrl}/api/interfaces`, { timeout: 3000 });
     testSuccess.value = true;
     testMessage.value = `Connexion réussie à ${form.apiUrl}`;
+    // Mise à jour immédiate de l'état global
+    store.connected = true;
   } catch {
     testSuccess.value = false;
     testMessage.value = `Impossible de joindre ${form.apiUrl} — vérifie que le backend est lancé.`;
+    // Optionnel : lancer un fetch pour tenter de rafraîchir l'état global
+    store.fetchMetrics();
   } finally {
     testing.value = false;
   }

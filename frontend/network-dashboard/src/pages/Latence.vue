@@ -30,67 +30,109 @@
 
     <!-- Contenu -->
     <div class="flex-1 p-4 flex flex-col gap-3 overflow-auto">
-      <!-- KPI row -->
+      <!-- KPI row : dynamique basée sur les deux premières interfaces surveillées -->
       <div class="grid grid-cols-5 gap-3">
+        <!-- RTT moyen – première interface surveillée -->
         <KpiCard
-          label="RTT moyen — eth0"
-          :value="store.latency.eth0.avg_ms.toFixed(0)"
+          v-if="monitoredInterfaces[0]"
+          :label="`RTT moyen — ${monitoredInterfaces[0].name}`"
+          :value="
+            (store.latency[monitoredInterfaces[0].name]?.avg_ms || 0).toFixed(0)
+          "
           unit="ms"
           sub="via 8.8.8.8"
           icon="ti-clock"
           :value-class="
-            store.latency.eth0.avg_ms > store.thresholds.latency_ms
+            (store.latency[monitoredInterfaces[0].name]?.avg_ms || 0) >
+            store.thresholds.latency_ms
               ? 'text-amber-500'
               : 'text-green-600'
           "
         />
+        <!-- RTT moyen – deuxième interface surveillée (si existe) -->
         <KpiCard
-          label="RTT moyen — wlan0"
-          :value="store.latency.wlan0.avg_ms.toFixed(0)"
+          v-if="monitoredInterfaces[1]"
+          :label="`RTT moyen — ${monitoredInterfaces[1].name}`"
+          :value="
+            (store.latency[monitoredInterfaces[1].name]?.avg_ms || 0).toFixed(0)
+          "
           unit="ms"
           sub="via 8.8.8.8"
           icon="ti-clock"
           :value-class="
-            store.latency.wlan0.avg_ms > store.thresholds.latency_ms
+            (store.latency[monitoredInterfaces[1].name]?.avg_ms || 0) >
+            store.thresholds.latency_ms
               ? 'text-amber-500'
               : 'text-green-600'
           "
         />
+        <!-- Jitter – première interface -->
         <KpiCard
-          label="Jitter — eth0"
-          :value="store.latency.eth0.jitter_ms.toFixed(1)"
+          v-if="monitoredInterfaces[0]"
+          :label="`Jitter — ${monitoredInterfaces[0].name}`"
+          :value="
+            (
+              store.latency[monitoredInterfaces[0].name]?.jitter_ms || 0
+            ).toFixed(1)
+          "
           unit="ms"
           sub="écart type RTT"
           icon="ti-wave-sine"
           :value-class="
-            store.latency.eth0.jitter_ms > store.thresholds.jitter_ms
+            (store.latency[monitoredInterfaces[0].name]?.jitter_ms || 0) >
+            store.thresholds.jitter_ms
               ? 'text-amber-500'
               : 'text-green-600'
           "
         />
+        <!-- Jitter – deuxième interface -->
         <KpiCard
-          label="Jitter — wlan0"
-          :value="store.latency.wlan0.jitter_ms.toFixed(1)"
+          v-if="monitoredInterfaces[1]"
+          :label="`Jitter — ${monitoredInterfaces[1].name}`"
+          :value="
+            (
+              store.latency[monitoredInterfaces[1].name]?.jitter_ms || 0
+            ).toFixed(1)
+          "
           unit="ms"
           sub="écart type RTT"
           icon="ti-wave-sine"
           :value-class="
-            store.latency.wlan0.jitter_ms > store.thresholds.jitter_ms
+            (store.latency[monitoredInterfaces[1].name]?.jitter_ms || 0) >
+            store.thresholds.jitter_ms
               ? 'text-amber-500'
               : 'text-green-600'
           "
         />
+        <!-- Perte de paquets moyenne -->
         <KpiCard
           label="Perte paquets"
           :value="avgPacketLoss.toFixed(1)"
           unit="%"
-          sub="eth0 + wlan0"
+          sub="toutes interfaces"
           icon="ti-alert-triangle"
           :value-class="
             avgPacketLoss > store.thresholds.packet_loss_pct
               ? 'text-red-600'
               : 'text-green-600'
           "
+        />
+        <!-- Si moins de 2 interfaces, on affiche des placeholders -->
+        <KpiCard
+          v-if="monitoredInterfaces.length < 1"
+          label="Aucune interface"
+          value="0"
+          unit="ms"
+          sub="surveillée"
+          icon="ti-clock"
+        />
+        <KpiCard
+          v-if="monitoredInterfaces.length < 2"
+          label="Aucune interface"
+          value="0"
+          unit="ms"
+          sub="supplémentaire"
+          icon="ti-clock"
         />
       </div>
 
@@ -101,40 +143,16 @@
             class="text-xs font-medium text-gray-500 flex items-center gap-1"
           >
             <i class="ti ti-chart-line"></i>
-            Variation RTT — eth0 &amp; wlan0
+            Variation RTT — toutes les interfaces
           </span>
           <div class="flex gap-4 text-xs text-gray-400">
-            <span
-              ><span
-                class="inline-block w-3 h-0.5 bg-purple-500 align-middle mr-1"
-              ></span
-              >eth0 RTT</span
-            >
-            <span
-              ><span
-                class="inline-block w-3 h-0.5 bg-purple-200 align-middle mr-1"
-              ></span
-              >eth0 jitter</span
-            >
-            <span
-              ><span
-                class="inline-block w-3 h-0.5 bg-green-500 align-middle mr-1"
-              ></span
-              >wlan0 RTT</span
-            >
-            <span
-              ><span
-                class="inline-block w-3 h-0.5 bg-green-200 align-middle mr-1"
-              ></span
-              >wlan0 jitter</span
-            >
-            <span
-              ><span
-                class="inline-block w-3 h-0.5 bg-red-400 align-middle mr-1"
-                style="border-top: 2px dashed #f87171"
-              ></span
-              >seuil</span
-            >
+            <span v-for="(iface, idx) in monitoredInterfaces" :key="iface.name">
+              <span
+                class="inline-block w-3 h-0.5 align-middle mr-1"
+                :style="{ backgroundColor: colors[idx % colors.length] }"
+              ></span>
+              {{ iface.name }} RTT
+            </span>
           </div>
         </div>
         <apexchart
@@ -146,87 +164,45 @@
       </div>
 
       <!-- Cartes cibles ping par interface -->
-      <div class="grid grid-cols-2 gap-3">
-        <!-- eth0 -->
-        <div class="bg-white border border-gray-200 rounded-lg p-4">
-          <div class="flex items-center gap-2 mb-3">
-            <span class="w-2 h-2 rounded-full bg-green-500"></span>
-            <span
-              class="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-50 text-purple-700"
-              >eth0</span
-            >
-            <span class="text-xs text-gray-400">Cibles ping</span>
-          </div>
-          <div
-            v-for="target in pingTargetsEth0"
-            :key="target.host"
-            class="flex items-center justify-between py-2 border-b border-gray-100 last:border-none"
-          >
-            <span class="text-xs font-mono text-gray-500">{{
-              target.host
-            }}</span>
-            <span class="text-xs font-medium text-purple-700"
-              >{{ target.rtt }} ms</span
-            >
-            <span
-              class="text-xs px-2 py-0.5 rounded-full"
-              :class="target.badgeClass"
-            >
-              {{ target.label }}
-            </span>
-          </div>
-          <div
-            class="flex items-center justify-between pt-2 mt-1 border-t border-gray-100"
-          >
-            <span class="text-xs text-gray-400">Jitter moy.</span>
-            <span class="text-xs font-medium text-gray-700">
-              {{ store.latency.eth0.jitter_ms.toFixed(1) }} ms
-            </span>
-            <span
-              class="text-xs px-2 py-0.5 rounded-full"
-              :class="
-                store.latency.eth0.jitter_ms > store.thresholds.jitter_ms
-                  ? 'bg-amber-50 text-amber-700'
-                  : 'bg-green-50 text-green-700'
-              "
-            >
-              {{
-                store.latency.eth0.jitter_ms > store.thresholds.jitter_ms
-                  ? "Variable"
-                  : "Stable"
-              }}
-            </span>
-          </div>
-        </div>
-
-        <!-- wlan0 -->
-        <div class="bg-white border border-gray-200 rounded-lg p-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div
+          v-for="iface in monitoredInterfaces"
+          :key="iface.name"
+          class="bg-white border border-gray-200 rounded-lg p-4"
+        >
           <div class="flex items-center gap-2 mb-3">
             <span
               class="w-2 h-2 rounded-full"
-              :class="
-                store.latency.wlan0.avg_ms > store.thresholds.latency_ms
-                  ? 'bg-amber-500'
-                  : 'bg-green-500'
-              "
+              :class="iface.up ? 'bg-green-500' : 'bg-red-500'"
             ></span>
             <span
-              class="text-xs font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700"
-              >wlan0</span
+              class="text-xs font-medium px-2 py-0.5 rounded-full"
+              :class="
+                iface.name.includes('w')
+                  ? 'bg-green-50 text-green-700'
+                  : 'bg-purple-50 text-purple-700'
+              "
             >
+              {{ iface.name }}
+            </span>
             <span class="text-xs text-gray-400">Cibles ping</span>
           </div>
           <div
-            v-for="target in pingTargetsWlan0"
+            v-for="target in pingTargetsForInterface(iface.name)"
             :key="target.host"
             class="flex items-center justify-between py-2 border-b border-gray-100 last:border-none"
           >
             <span class="text-xs font-mono text-gray-500">{{
               target.host
             }}</span>
-            <span class="text-xs font-medium text-green-700"
-              >{{ target.rtt }} ms</span
+            <span
+              class="text-xs font-medium"
+              :class="
+                iface.name.includes('w') ? 'text-green-700' : 'text-purple-700'
+              "
             >
+              {{ target.rtt }} ms
+            </span>
             <span
               class="text-xs px-2 py-0.5 rounded-full"
               :class="target.badgeClass"
@@ -239,18 +215,20 @@
           >
             <span class="text-xs text-gray-400">Jitter moy.</span>
             <span class="text-xs font-medium text-gray-700">
-              {{ store.latency.wlan0.jitter_ms.toFixed(1) }} ms
+              {{ (store.latency[iface.name]?.jitter_ms || 0).toFixed(1) }} ms
             </span>
             <span
               class="text-xs px-2 py-0.5 rounded-full"
               :class="
-                store.latency.wlan0.jitter_ms > store.thresholds.jitter_ms
+                (store.latency[iface.name]?.jitter_ms || 0) >
+                store.thresholds.jitter_ms
                   ? 'bg-amber-50 text-amber-700'
                   : 'bg-green-50 text-green-700'
               "
             >
               {{
-                store.latency.wlan0.jitter_ms > store.thresholds.jitter_ms
+                (store.latency[iface.name]?.jitter_ms || 0) >
+                store.thresholds.jitter_ms
                   ? "Variable"
                   : "Stable"
               }}
@@ -277,12 +255,31 @@ const periods = [
 ];
 const activePeriod = ref("1m");
 
-// ── Métriques calculées ──────────────────────────────
-const avgPacketLoss = computed(
-  () =>
-    (store.latency.eth0.packet_loss_pct + store.latency.wlan0.packet_loss_pct) /
-    2,
+// ── Palette de couleurs ──────────────────────────────
+const colors = [
+  "#8B5CF6",
+  "#22C55E",
+  "#3B82F6",
+  "#F59E0B",
+  "#EF4444",
+  "#EC4899",
+];
+
+// ── Interfaces surveillées ───────────────────────────
+const monitoredInterfaces = computed(() =>
+  store.interfaces.filter((i) => i.monitored),
 );
+
+// ── Métriques agrégées ──────────────────────────────
+const avgPacketLoss = computed(() => {
+  const interfaces = monitoredInterfaces.value;
+  if (interfaces.length === 0) return 0;
+  const sum = interfaces.reduce(
+    (acc, iface) => acc + (store.latency[iface.name]?.packet_loss_pct || 0),
+    0,
+  );
+  return sum / interfaces.length;
+});
 
 // ── Badge qualité selon RTT ──────────────────────────
 function qualityBadge(rtt) {
@@ -294,22 +291,15 @@ function qualityBadge(rtt) {
   return { label: "Dégradé", badgeClass: "bg-red-50 text-red-700" };
 }
 
-// ── Cibles ping (depuis le store + latence reçue) ────
-const pingTargetsEth0 = computed(() =>
-  store.pingTargets.map((host) => ({
+// ── Cibles ping pour une interface ───────────────────
+function pingTargetsForInterface(ifaceName) {
+  const lat = store.latency[ifaceName] || { avg_ms: 0 };
+  return store.pingTargets.map((host) => ({
     host,
-    rtt: store.latency.eth0.avg_ms.toFixed(0),
-    ...qualityBadge(store.latency.eth0.avg_ms),
-  })),
-);
-
-const pingTargetsWlan0 = computed(() =>
-  store.pingTargets.map((host) => ({
-    host,
-    rtt: store.latency.wlan0.avg_ms.toFixed(0),
-    ...qualityBadge(store.latency.wlan0.avg_ms),
-  })),
-);
+    rtt: lat.avg_ms.toFixed(0),
+    ...qualityBadge(lat.avg_ms),
+  }));
+}
 
 // ── Options ApexCharts ───────────────────────────────
 const chartOptions = computed(() => ({
@@ -324,12 +314,12 @@ const chartOptions = computed(() => ({
   },
   stroke: {
     curve: "smooth",
-    width: [2, 1.5, 2, 1.5],
-    dashArray: [0, 5, 0, 5],
+    width: 2,
   },
-  colors: ["#8B5CF6", "#C4B5FD", "#22C55E", "#86EFAC"],
+  colors: colors,
   xaxis: {
-    categories: store.history.eth0.timestamps,
+    categories:
+      store.history[monitoredInterfaces.value[0]?.name]?.timestamps || [],
     labels: { style: { fontSize: "10px", colors: "#9CA3AF" } },
     axisBorder: { show: false },
     axisTicks: { show: false },
@@ -366,10 +356,18 @@ const chartOptions = computed(() => ({
   },
 }));
 
-const series = computed(() => [
-  { name: "eth0 RTT", data: store.history.eth0.rtt },
-  { name: "eth0 jitter", data: store.history.eth0.rtt.map((v) => v * 0.15) },
-  { name: "wlan0 RTT", data: store.history.wlan0.rtt },
-  { name: "wlan0 jitter", data: store.history.wlan0.rtt.map((v) => v * 0.25) },
-]);
+const series = computed(() => {
+  const result = [];
+  monitoredInterfaces.value.forEach((iface) => {
+    const hist = store.history[iface.name] || { rtt: [] };
+    result.push({ name: `${iface.name} RTT`, data: hist.rtt });
+    // On peut aussi ajouter une série jitter approximative
+    result.push({
+      name: `${iface.name} jitter`,
+      data: hist.rtt.map((v) => v * 0.15), // approximation, à adapter si jitter réel dispo
+      dashArray: 5,
+    });
+  });
+  return result;
+});
 </script>
