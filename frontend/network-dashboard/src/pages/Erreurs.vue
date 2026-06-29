@@ -136,33 +136,33 @@
                 <th class="text-left py-2 px-3 font-medium text-gray-400 w-32">Valeur</th>
               </tr>
             </thead>
-            <tbody>
-              <tr
-                v-for="err in paginatedErrors"
-                :key="err.id"
-                class="border-b border-gray-50 hover:bg-gray-50 transition-colors"
-              >
-                <td class="py-2 px-3 font-mono text-gray-400">{{ err.timestamp }}</td>
-                <td class="py-2 px-3">
-                  <span class="px-2 py-0.5 rounded-full font-medium" :class="severityClass(err.severity)">
-                    {{ severityLabel(err.severity) }}
-                  </span>
-                </td>
-                <td class="py-2 px-3">
-                  <span class="px-2 py-0.5 rounded-full" :class="ifaceClass(err.iface)">
-                    {{ err.iface }}
-                  </span>
-                </td>
-                <td class="py-2 px-3 text-gray-700">{{ err.message }}</td>
-                <td class="py-2 px-3 font-mono text-gray-400">{{ err.value }}</td>
-              </tr>
-              <tr v-if="paginatedErrors.length === 0">
-                <td colspan="5" class="py-8 text-center text-gray-400">
-                  <i class="ti ti-check text-green-500 text-lg block mb-1"></i>
-                  Aucune erreur trouvée
-                </td>
-              </tr>
-            </tbody>
+              <tbody>
+                <tr
+                  v-for="err in paginatedErrors"
+                  :key="err.id"
+                  class="border-b border-gray-50 hover:bg-gray-50 transition-colors"
+                >
+                  <td class="py-2 px-3 font-mono text-gray-400">{{ err.timestamp }}</td>
+                  <td class="py-2 px-3">
+                    <span class="px-2 py-0.5 rounded-full font-medium" :class="severityClass(err.severity)">
+                      {{ severityLabel(err.severity) }}
+                    </span>
+                  </td>
+                  <td class="py-2 px-3">
+                    <span class="px-2 py-0.5 rounded-full" :class="ifaceClass(err.iface)">
+                      {{ err.iface }}
+                    </span>
+                  </td>
+                  <td class="py-2 px-3 text-gray-700">{{ err.message }}</td>
+                  <td class="py-2 px-3 font-mono text-gray-400">{{ err.value }}</td>
+                </tr>
+                <tr v-if="paginatedErrors.length === 0">
+                  <td colspan="5" class="py-8 text-center text-gray-400">
+                    <i class="ti ti-check text-green-500 text-lg block mb-1"></i>
+                    Aucune erreur trouvée
+                  </td>
+                </tr>
+              </tbody>
           </table>
         </div>
 
