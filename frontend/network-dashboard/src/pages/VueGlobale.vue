@@ -1,20 +1,22 @@
 <template>
-  <div class="flex flex-col h-full bg-gray-50">
+  <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
     <!-- Topbar -->
     <div
-      class="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200"
+      class="flex items-center justify-between px-5 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
     >
       <div class="flex items-center gap-2">
         <i class="ti ti-layout-dashboard text-blue-500 text-base"></i>
-        <span class="text-sm font-medium text-gray-800">Vue globale</span>
+        <span class="text-sm font-medium text-gray-800 dark:text-gray-100"
+          >Vue globale</span
+        >
       </div>
       <div class="flex items-center gap-2">
         <span
           class="text-xs px-2 py-1 rounded-full"
           :class="
             store.connected
-              ? 'bg-green-50 text-green-700'
-              : 'bg-red-50 text-red-600'
+              ? 'bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300'
+              : 'bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-300'
           "
         >
           <span
@@ -23,182 +25,229 @@
           ></span>
           {{ store.connected ? "Connecté" : "Déconnecté" }}
         </span>
-        <span class="text-xs text-gray-400">Màj : {{ store.interval }}s</span>
+        <span class="text-xs text-gray-400 dark:text-gray-500"
+          >Màj : {{ store.interval }}s</span
+        >
       </div>
     </div>
 
     <!-- Contenu -->
-    <div class="flex-1 p-4 flex flex-col gap-3 overflow-auto">
-      <!-- KPI row -->
-      <div class="grid grid-cols-4 gap-3">
-        <KpiCard
-          label="Débit descendant"
-          :value="store.totalDownload.toFixed(1)"
-          unit="Mbps"
-          sub="toutes interfaces"
-          icon="ti-arrow-down"
-          value-class="text-blue-600"
-        />
-        <KpiCard
-          label="Débit montant"
-          :value="store.totalUpload.toFixed(1)"
-          unit="Mbps"
-          sub="toutes interfaces"
-          icon="ti-arrow-up"
-          value-class="text-blue-600"
-        />
-        <KpiCard
-          label="Latence moy."
-          :value="avgLatency.toFixed(0)"
-          unit="ms"
-          sub="via 8.8.8.8"
-          icon="ti-clock"
-          :value-class="
-            avgLatency > store.thresholds.latency_ms
-              ? 'text-amber-500'
-              : 'text-green-600'
-          "
-        />
-        <KpiCard
-          label="Perte paquets"
-          :value="avgPacketLoss.toFixed(1)"
-          unit="%"
-          sub="toutes interfaces"
-          icon="ti-alert-triangle"
-          :value-class="
-            avgPacketLoss > store.thresholds.packet_loss_pct
-              ? 'text-red-600'
-              : 'text-green-600'
-          "
-        />
-      </div>
-
-      <!-- Graphiques ligne 1 -->
-      <div class="grid grid-cols-3 gap-3">
-        <div class="col-span-2 bg-white border border-gray-200 rounded-lg p-3">
-          <div class="flex items-center justify-between mb-2">
-            <span
-              class="text-xs font-medium text-gray-500 flex items-center gap-1"
-            >
-              <i class="ti ti-chart-line"></i> Débit temps réel
-            </span>
-            <div class="flex gap-3 text-xs text-gray-400">
-              <span
-                v-for="(iface, idx) in monitoredInterfaces"
-                :key="iface.name"
-              >
-                <span
-                  class="inline-block w-3 h-0.5 align-middle mr-1"
-                  :style="{ backgroundColor: colors[idx % colors.length] }"
-                ></span>
-                {{ iface.name }} ↓
-              </span>
-            </div>
-          </div>
-          <apexchart
-            ref="bandwidthChart"
-            type="line"
-            height="160"
-            :options="bandwidthChartOptions"
-            :series="bandwidthSeries"
+    <div class="flex-1 p-4 flex flex-col gap-4 overflow-auto">
+      <!-- Section KPI -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+          Aperçu général
+        </h2>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <KpiCard
+            label="Débit descendant"
+            :value="store.totalDownload.toFixed(1)"
+            unit="Mbps"
+            sub="toutes interfaces"
+            icon="ti-arrow-down"
+            value-class="text-blue-600"
+            :loading="!store.connected && store.totalDownload === 0"
           />
-        </div>
-
-        <div class="bg-white border border-gray-200 rounded-lg p-3">
-          <div class="flex items-center justify-between mb-2">
-            <span
-              class="text-xs font-medium text-gray-500 flex items-center gap-1"
-            >
-              <i class="ti ti-clock"></i> Latence RTT
-            </span>
-            <div class="flex gap-3 text-xs text-gray-400">
-              <span
-                v-for="(iface, idx) in monitoredInterfaces"
-                :key="iface.name"
-              >
-                <span
-                  class="inline-block w-3 h-0.5 align-middle mr-1"
-                  :style="{ backgroundColor: colors[idx % colors.length] }"
-                ></span>
-                {{ iface.name }}
-              </span>
-            </div>
-          </div>
-          <apexchart
-            ref="latencyChart"
-            type="line"
-            height="160"
-            :options="latencyChartOptions"
-            :series="latencySeries"
+          <KpiCard
+            label="Débit montant"
+            :value="store.totalUpload.toFixed(1)"
+            unit="Mbps"
+            sub="toutes interfaces"
+            icon="ti-arrow-up"
+            value-class="text-blue-600"
+            :loading="!store.connected && store.totalUpload === 0"
+          />
+          <KpiCard
+            label="Latence moy."
+            :value="avgLatency.toFixed(0)"
+            unit="ms"
+            sub="via 8.8.8.8"
+            icon="ti-clock"
+            :value-class="
+              avgLatency > store.thresholds.latency_ms
+                ? 'text-amber-500'
+                : 'text-green-600'
+            "
+            :loading="!store.connected && avgLatency === 0"
+          />
+          <KpiCard
+            label="Perte paquets"
+            :value="avgPacketLoss.toFixed(1)"
+            unit="%"
+            sub="toutes interfaces"
+            icon="ti-alert-triangle"
+            :value-class="
+              avgPacketLoss > store.thresholds.packet_loss_pct
+                ? 'text-red-600'
+                : 'text-green-600'
+            "
+            :loading="!store.connected && avgPacketLoss === 0"
           />
         </div>
       </div>
 
-      <!-- Ligne du bas -->
-      <div class="grid grid-cols-3 gap-3">
-        <!-- Utilisation réseau -->
-        <div class="bg-white border border-gray-200 rounded-lg p-3">
+      <!-- Section Graphiques -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+          Graphiques temps réel
+        </h2>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <div
-            class="text-xs font-medium text-gray-500 flex items-center gap-1 mb-3"
+            class="lg:col-span-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
           >
-            <i class="ti ti-gauge"></i> Utilisation réseau
+            <div class="flex items-center justify-between mb-3">
+              <span
+                class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1"
+              >
+                <i class="ti ti-chart-line"></i> Débit temps réel
+              </span>
+              <div
+                class="flex gap-3 text-xs text-gray-400 dark:text-gray-500 flex-wrap"
+              >
+                <span
+                  v-for="(iface, idx) in monitoredInterfaces"
+                  :key="iface.name"
+                >
+                  <span
+                    class="inline-block w-3 h-0.5 align-middle mr-1"
+                    :style="{ backgroundColor: colors[idx % colors.length] }"
+                  ></span>
+                  {{ iface.name }} ↓
+                </span>
+              </div>
+            </div>
+            <apexchart
+              ref="bandwidthChart"
+              type="line"
+              height="180"
+              :options="bandwidthChartOptions"
+              :series="bandwidthSeries"
+            />
           </div>
-          <UsageBar
-            v-for="iface in ifaceUsage"
-            :key="iface.name"
-            :label="iface.name"
-            :value="parseFloat(iface.pct)"
-            :color="iface.name.includes('w') ? 'green' : 'blue'"
-            class="mb-3 last:mb-0"
-          />
-        </div>
 
-        <!-- Métriques clés -->
-        <div class="bg-white border border-gray-200 rounded-lg p-3">
           <div
-            class="text-xs font-medium text-gray-500 flex items-center gap-1 mb-2"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
           >
-            <i class="ti ti-list"></i> Métriques clés
-          </div>
-          <div
-            v-for="m in keyMetrics"
-            :key="m.label"
-            class="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-none text-xs"
-          >
-            <span class="text-gray-500">{{ m.label }}</span>
-            <span class="font-medium" :class="m.class">{{ m.value }}</span>
+            <div class="flex items-center justify-between mb-3">
+              <span
+                class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1"
+              >
+                <i class="ti ti-clock"></i> Latence RTT
+              </span>
+              <div
+                class="flex gap-3 text-xs text-gray-400 dark:text-gray-500 flex-wrap"
+              >
+                <span
+                  v-for="(iface, idx) in monitoredInterfaces"
+                  :key="iface.name"
+                >
+                  <span
+                    class="inline-block w-3 h-0.5 align-middle mr-1"
+                    :style="{ backgroundColor: colors[idx % colors.length] }"
+                  ></span>
+                  {{ iface.name }}
+                </span>
+              </div>
+            </div>
+            <apexchart
+              ref="latencyChart"
+              type="line"
+              height="180"
+              :options="latencyChartOptions"
+              :series="latencySeries"
+            />
           </div>
         </div>
+      </div>
 
-        <!-- Disponibilité dynamique -->
-        <div class="bg-white border border-gray-200 rounded-lg p-3">
+      <!-- Section détails -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+          Détails et santé
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <!-- Utilisation réseau -->
           <div
-            class="text-xs font-medium text-gray-500 flex items-center gap-1 mb-2"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
           >
-            <i class="ti ti-server"></i> Disponibilité
-          </div>
-          <div class="text-center py-2">
             <div
-              class="text-3xl font-medium"
-              :class="uptimePercent >= 99 ? 'text-green-600' : 'text-amber-500'"
+              class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-3"
             >
-              {{ uptimePercent.toFixed(1) }}<span class="text-sm">%</span>
+              <i class="ti ti-gauge"></i> Utilisation réseau
             </div>
-            <div class="text-xs text-gray-400 mt-1">{{ uptimePeriod }}</div>
+            <UsageBar
+              v-for="iface in ifaceUsage"
+              :key="iface.name"
+              :label="iface.name"
+              :value="parseFloat(iface.pct)"
+              :color="iface.name.includes('w') ? 'green' : 'blue'"
+              class="mb-3 last:mb-0"
+            />
           </div>
+
+          <!-- Métriques clés -->
           <div
-            v-for="d in disponibilite"
-            :key="d.label"
-            class="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-none text-xs"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
           >
-            <span class="text-gray-500">
+            <div
+              class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-3"
+            >
+              <i class="ti ti-list"></i> Métriques clés
+            </div>
+            <div
+              v-for="m in keyMetrics"
+              :key="m.label"
+              class="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-none text-xs"
+            >
+              <span class="text-gray-500 dark:text-gray-400">{{
+                m.label
+              }}</span>
               <span
-                class="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle"
-                :class="d.dot"
-              ></span>
-              {{ d.label }}
-            </span>
-            <span class="font-medium text-gray-700">{{ d.value }}</span>
+                class="font-medium text-gray-700 dark:text-gray-200"
+                :class="m.class"
+                >{{ m.value }}</span
+              >
+            </div>
+          </div>
+
+          <!-- Disponibilité -->
+          <div
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+          >
+            <div
+              class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-3"
+            >
+              <i class="ti ti-server"></i> Disponibilité
+            </div>
+            <div class="text-center py-2">
+              <div
+                class="text-3xl font-medium"
+                :class="
+                  uptimePercent >= 99 ? 'text-green-600' : 'text-amber-500'
+                "
+              >
+                {{ uptimePercent.toFixed(1) }}<span class="text-sm">%</span>
+              </div>
+              <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {{ uptimePeriod }}
+              </div>
+            </div>
+            <div
+              v-for="d in disponibilite"
+              :key="d.label"
+              class="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-none text-xs"
+            >
+              <span class="text-gray-500 dark:text-gray-400">
+                <span
+                  class="inline-block w-1.5 h-1.5 rounded-full mr-1 align-middle"
+                  :class="d.dot"
+                ></span>
+                {{ d.label }}
+              </span>
+              <span class="font-medium text-gray-700 dark:text-gray-200">{{
+                d.value
+              }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -226,12 +275,17 @@ const colors = [
   "#EC4899",
 ];
 
+// Dark mode pour ApexCharts
+const isDark = computed(() =>
+  document.documentElement.classList.contains("dark"),
+);
+
 // Interfaces surveillées
 const monitoredInterfaces = computed(() =>
   store.interfaces.filter((i) => i.monitored),
 );
 
-// ── Métriques calculées (agrégation sur toutes les interfaces) ──
+// ── Métriques agrégées ─────────────────────────────
 const avgLatency = computed(() => {
   const latencies = monitoredInterfaces.value.map(
     (i) => store.latency[i.name]?.avg_ms || 0,
@@ -248,7 +302,7 @@ const avgPacketLoss = computed(() => {
   return losses.length ? losses.reduce((a, b) => a + b, 0) / losses.length : 0;
 });
 
-// Utilisation réseau (pourcentage par rapport à 1000 Mbps ou 300 Mbps)
+// Utilisation réseau
 const ifaceUsage = computed(() =>
   monitoredInterfaces.value.map((iface) => {
     const bw = store.bandwidth[iface.name] || { download_Mbps: 0 };
@@ -260,7 +314,7 @@ const ifaceUsage = computed(() =>
   }),
 );
 
-// Métriques clés (une sélection pour la première interface surveillée)
+// Métriques clés
 const keyMetrics = computed(() => {
   const firstIface = monitoredInterfaces.value[0];
   if (!firstIface) return [];
@@ -269,12 +323,12 @@ const keyMetrics = computed(() => {
     {
       label: `RTT min (${firstIface.name})`,
       value: `${(lat.min_ms || 0).toFixed(0)} ms`,
-      class: "text-gray-700",
+      class: "text-gray-700 dark:text-gray-200",
     },
     {
       label: `RTT max (${firstIface.name})`,
       value: `${(lat.max_ms || 0).toFixed(0)} ms`,
-      class: "text-gray-700",
+      class: "text-gray-700 dark:text-gray-200",
     },
     {
       label: `Jitter (${firstIface.name})`,
@@ -282,39 +336,40 @@ const keyMetrics = computed(() => {
       class:
         (lat.jitter_ms || 0) > store.thresholds.jitter_ms
           ? "text-amber-500"
-          : "text-gray-700",
+          : "text-gray-700 dark:text-gray-200",
     },
     {
       label: "Taux d'erreur",
       value: `${(lat.packet_loss_pct || 0).toFixed(1)}%`,
       class: "text-green-600",
     },
-    { label: "Connexions", value: "142", class: "text-gray-700" }, // Peut rester statique si pas de source
+    {
+      label: "Connexions",
+      value: store.connections["global"]?.total || 0,
+      class: "text-gray-700 dark:text-gray-200",
+    },
   ];
 });
 
 // ── Disponibilité dynamique ──────────────────────────
-const connectionHistory = ref([]); // stocke les derniers statuts (true/false)
+const connectionHistory = ref([]);
 const MAX_HISTORY = 100;
 const disconnectionCount = ref(0);
 const lastConnectedTime = ref(Date.now());
 const onlineDuration = ref(0);
 let onlineTimer = null;
 
-// Pourcentage de temps disponible sur les derniers échantillons
 const uptimePercent = computed(() => {
   if (connectionHistory.value.length === 0) return 100;
   const successes = connectionHistory.value.filter(Boolean).length;
   return (successes / connectionHistory.value.length) * 100;
 });
 
-// Période d'analyse (basée sur l'intervalle et le nombre de points)
 const uptimePeriod = computed(() => {
   const minutes = Math.round((MAX_HISTORY * store.interval) / 60);
   return `dernières ${minutes} min`;
 });
 
-// Durée en ligne formatée
 const formatDuration = (seconds) => {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -322,7 +377,6 @@ const formatDuration = (seconds) => {
   return `${h > 0 ? h + "h " : ""}${m}m ${s}s`;
 };
 
-// Mise à jour de la durée en ligne
 function updateOnlineDuration() {
   if (store.connected) {
     onlineDuration.value = Math.floor(
@@ -333,50 +387,28 @@ function updateOnlineDuration() {
   }
 }
 
-// Surveille les changements de connexion
 watch(
   () => store.connected,
   (newVal, oldVal) => {
-    // Ajouter le nouveau statut à l'historique
     connectionHistory.value.push(newVal);
-    if (connectionHistory.value.length > MAX_HISTORY) {
+    if (connectionHistory.value.length > MAX_HISTORY)
       connectionHistory.value.shift();
-    }
-
-    // Détection d'une déconnexion
-    if (oldVal === true && newVal === false) {
-      disconnectionCount.value++;
-    }
-
-    // Mise à jour du temps de connexion
-    if (newVal === true && oldVal === false) {
+    if (oldVal === true && newVal === false) disconnectionCount.value++;
+    if (newVal === true && oldVal === false)
       lastConnectedTime.value = Date.now();
-    }
-
-    // Réinitialiser le timer de durée
     clearInterval(onlineTimer);
-    if (newVal) {
-      onlineTimer = setInterval(updateOnlineDuration, 1000);
-    } else {
-      onlineDuration.value = 0;
-    }
+    if (newVal) onlineTimer = setInterval(updateOnlineDuration, 1000);
+    else onlineDuration.value = 0;
   },
 );
 
-// À l'initialisation, on remplit l'historique avec l'état actuel
 onMounted(() => {
-  // Remplir avec l'état actuel (considérer qu'on vient de démarrer, donc 100% pour l'instant)
   connectionHistory.value = Array(MAX_HISTORY).fill(store.connected);
-  if (store.connected) {
-    onlineTimer = setInterval(updateOnlineDuration, 1000);
-  }
+  if (store.connected) onlineTimer = setInterval(updateOnlineDuration, 1000);
 });
 
-onUnmounted(() => {
-  clearInterval(onlineTimer);
-});
+onUnmounted(() => clearInterval(onlineTimer));
 
-// ── Données pour la section Disponibilité ────────────
 const disponibilite = computed(() => [
   {
     label: "Temps en ligne",
@@ -406,6 +438,7 @@ const bandwidthChartOptions = computed(() => ({
       dynamicAnimation: { speed: 1000 },
     },
     background: "transparent",
+    foreColor: isDark.value ? "#9CA3AF" : "#6B7280",
   },
   stroke: { curve: "smooth", width: 2 },
   colors: colors,
@@ -422,9 +455,15 @@ const bandwidthChartOptions = computed(() => ({
       formatter: (v) => v.toFixed(0) + "M",
     },
   },
-  grid: { borderColor: "#F3F4F6", strokeDashArray: 4 },
+  grid: {
+    borderColor: isDark.value ? "#374151" : "#F3F4F6",
+    strokeDashArray: 4,
+  },
   legend: { show: false },
-  tooltip: { theme: "light", y: { formatter: (v) => v.toFixed(2) + " Mbps" } },
+  tooltip: {
+    theme: isDark.value ? "dark" : "light",
+    y: { formatter: (v) => v.toFixed(2) + " Mbps" },
+  },
 }));
 
 const bandwidthSeries = computed(() => {
@@ -445,6 +484,7 @@ const latencyChartOptions = computed(() => ({
       dynamicAnimation: { speed: 1000 },
     },
     background: "transparent",
+    foreColor: isDark.value ? "#9CA3AF" : "#6B7280",
   },
   stroke: { curve: "smooth", width: 2 },
   colors: colors,
@@ -465,7 +505,7 @@ const latencyChartOptions = computed(() => ({
     yaxis: [
       {
         y: store.thresholds.latency_ms,
-        borderColor: "#EF4444",
+        borderColor: "#F87171",
         strokeDashArray: 5,
         label: {
           text: `seuil ${store.thresholds.latency_ms}ms`,
@@ -478,9 +518,15 @@ const latencyChartOptions = computed(() => ({
       },
     ],
   },
-  grid: { borderColor: "#F3F4F6", strokeDashArray: 4 },
+  grid: {
+    borderColor: isDark.value ? "#374151" : "#F3F4F6",
+    strokeDashArray: 4,
+  },
   legend: { show: false },
-  tooltip: { theme: "light", y: { formatter: (v) => v.toFixed(1) + " ms" } },
+  tooltip: {
+    theme: isDark.value ? "dark" : "light",
+    y: { formatter: (v) => v.toFixed(1) + " ms" },
+  },
 }));
 
 const latencySeries = computed(() => {
@@ -490,7 +536,7 @@ const latencySeries = computed(() => {
   }));
 });
 
-// Mise à jour des graphiques sans reset
+// Mise à jour des graphiques
 watch(
   () => store.history,
   () => {
