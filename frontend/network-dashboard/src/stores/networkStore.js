@@ -3,22 +3,17 @@ import { ref, computed } from "vue";
 import axios from "axios";
 
 export const useNetworkStore = defineStore("network", () => {
-  // ── Configuration ──────────────────────────────────
   const apiUrl = ref("http://localhost:8000");
-  const interval = ref(2); // secondes
+  const interval = ref(2);
   const connected = ref(false);
 
-  const api = axios.create({
-    baseURL: apiUrl.value,
-    timeout: 8000, // 8 secondes max par requête
-  });
-
-  // ── Interfaces surveillées ─────────────────────────
-  const interfaces = ref([]); // { name, icon, up, monitored, ipv4, mac, ... }
+  const interfaces = ref([]);
 
   async function fetchInterfaces() {
     try {
-      const res = await api.get("/api/interfaces");
+      const res = await axios.get(`${apiUrl.value}/api/interfaces`, {
+        timeout: 8000,
+      });
       interfaces.value = res.data.map((iface) => ({
         name: iface.name,
         icon:
@@ -27,24 +22,67 @@ export const useNetworkStore = defineStore("network", () => {
             ? "ti-wifi"
             : "ti-network",
         up: iface.up,
-        monitored: iface.up, // par défaut
+        mtu: iface.mtu,
+        gateway: iface.gateway || "",
+        monitored: iface.up,
         ipv4: iface.ipv4 || "",
         netmask: iface.netmask || "",
         mac: iface.mac || "",
         ipv6: iface.ipv6 || "",
       }));
     } catch {
-      // fallback – liste vide, sera géré par le polling
       interfaces.value = [];
     }
   }
 
-  // ── Métriques temps réel (dynamiques) ─────────────
-  const bandwidth = ref({}); // { [ifaceName]: { download_Mbps, upload_Mbps, bytes_recv, bytes_sent } }
-  const latency = ref({}); // { [ifaceName]: { avg_ms, min_ms, max_ms, jitter_ms, packet_loss_pct } }
+  // ── Refresh périodique (préserve monitored et les nouveaux champs) ──
+  async function refreshInterfaces() {
+    try {
+      const res = await axios.get(`${apiUrl.value}/api/interfaces`, {
+        timeout: 5000,
+      });
+      const freshList = res.data;
+      const newInterfaces = freshList.map((iface) => {
+        const existing = interfaces.value.find((i) => i.name === iface.name);
+        return {
+          name: iface.name,
+          icon:
+            iface.name.toLowerCase().includes("wlan") ||
+            iface.name.toLowerCase().includes("wi")
+              ? "ti-wifi"
+              : "ti-network",
+          up: iface.up,
+          mtu: iface.mtu, // conservé
+          gateway: iface.gateway || "", // conservé
+          monitored: existing ? existing.monitored : iface.up,
+          ipv4: iface.ipv4 || "",
+          netmask: iface.netmask || "",
+          mac: iface.mac || "",
+          ipv6: iface.ipv6 || "",
+        };
+      });
+      interfaces.value = newInterfaces;
+    } catch {
+      // silencieux
+    }
+  }
 
-  // ── Historique pour les graphiques (60 points) ─────
-  const history = ref({}); // { [ifaceName]: { download: [], upload: [], rtt: [], timestamps: [] } }
+  let _interfaceTimer = null;
+  function startInterfaceRefresh() {
+    refreshInterfaces();
+    if (_interfaceTimer) clearInterval(_interfaceTimer);
+    _interfaceTimer = setInterval(refreshInterfaces, 10000);
+  }
+  function stopInterfaceRefresh() {
+    clearInterval(_interfaceTimer);
+    _interfaceTimer = null;
+  }
+
+  // ── Métriques temps réel ─────────────────────────────
+  const bandwidth = ref({});
+  const latency = ref({});
+
+  const history = ref({});
   const MAX_POINTS = 60;
 
   function initHistory(ifaceName) {
@@ -119,7 +157,38 @@ export const useNetworkStore = defineStore("network", () => {
     }
   }
 
-  // ── Polling ─────────────────────────────────────────
+  // ── Connexions TCP ──────────────────────────────────
+  const connections = ref({});
+
+  async function fetchConnections() {
+    try {
+      // Appeler l'API sans paramètre pour obtenir les stats globales
+      const res = await axios.get(`${apiUrl.value}/api/connections`, {
+        timeout: 5000,
+      });
+      if (res.data) {
+        connections.value["global"] = {
+          total: res.data.total || 0,
+          states: res.data.states || {},
+        };
+      }
+    } catch {
+      // silencieux
+    }
+  }
+
+  let _connectionsTimer = null;
+  function startConnectionsRefresh() {
+    fetchConnections();
+    if (_connectionsTimer) clearInterval(_connectionsTimer);
+    _connectionsTimer = setInterval(fetchConnections, 5000);
+  }
+  function stopConnectionsRefresh() {
+    clearInterval(_connectionsTimer);
+    _connectionsTimer = null;
+  }
+
+  // ── Polling principal ───────────────────────────────
   let _timer = null;
 
   function getMonitoredInterfaces() {
@@ -133,12 +202,19 @@ export const useNetworkStore = defineStore("network", () => {
       return;
     }
 
-    // Construire les promesses pour toutes les interfaces surveillées
     const bandwidthPromises = monitored.map((iface) =>
-      api.get(`/api/bandwidth?interface=${iface}`).catch(() => null),
+      axios
+        .get(`${apiUrl.value}/api/bandwidth?interface=${iface}`, {
+          timeout: 8000,
+        })
+        .catch(() => null),
     );
     const latencyPromises = monitored.map((iface) =>
-      api.get(`/api/latency?interface=${iface}&host=8.8.8.8`).catch(() => null),
+      axios
+        .get(`${apiUrl.value}/api/latency?interface=${iface}&host=8.8.8.8`, {
+          timeout: 8000,
+        })
+        .catch(() => null),
     );
 
     const bwResults = await Promise.allSettled(bandwidthPromises);
@@ -146,7 +222,6 @@ export const useNetworkStore = defineStore("network", () => {
 
     let anySuccess = false;
 
-    // Mise à jour du bandwidth
     monitored.forEach((iface, idx) => {
       if (bwResults[idx].status === "fulfilled" && bwResults[idx].value) {
         const data = bwResults[idx].value.data;
@@ -157,20 +232,16 @@ export const useNetworkStore = defineStore("network", () => {
           bytes_sent: Number(data.bytes_sent) || 0,
         };
         anySuccess = true;
-      } else {
-        // conserver l'ancienne structure si existe, sinon initialiser
-        if (!bandwidth.value[iface]) {
-          bandwidth.value[iface] = {
-            download_Mbps: 0,
-            upload_Mbps: 0,
-            bytes_recv: 0,
-            bytes_sent: 0,
-          };
-        }
+      } else if (!bandwidth.value[iface]) {
+        bandwidth.value[iface] = {
+          download_Mbps: 0,
+          upload_Mbps: 0,
+          bytes_recv: 0,
+          bytes_sent: 0,
+        };
       }
     });
 
-    // Mise à jour de la latence
     monitored.forEach((iface, idx) => {
       if (latResults[idx].status === "fulfilled" && latResults[idx].value) {
         const data = latResults[idx].value.data;
@@ -182,36 +253,29 @@ export const useNetworkStore = defineStore("network", () => {
           packet_loss_pct: Number(data.packet_loss_pct) || 0,
         };
         anySuccess = true;
-      } else {
-        if (!latency.value[iface]) {
-          latency.value[iface] = {
-            avg_ms: 0,
-            min_ms: 0,
-            max_ms: 0,
-            jitter_ms: 0,
-            packet_loss_pct: 0,
-          };
-        }
+      } else if (!latency.value[iface]) {
+        latency.value[iface] = {
+          avg_ms: 0,
+          min_ms: 0,
+          max_ms: 0,
+          jitter_ms: 0,
+          packet_loss_pct: 0,
+        };
       }
     });
 
-    // Alimenter l'historique pour chaque interface
     monitored.forEach((iface) => {
-      const bw = bandwidth.value[iface] || {
-        download_Mbps: 0,
-        upload_Mbps: 0,
-      };
+      const bw = bandwidth.value[iface] || { download_Mbps: 0, upload_Mbps: 0 };
       const lat = latency.value[iface] || { avg_ms: 0 };
       pushHistory(iface, bw, lat);
     });
 
-    // ✅ Mise à zéro si tout échoue
     if (!anySuccess) {
       monitored.forEach((iface) => {
         bandwidth.value[iface] = {
           download_Mbps: 0,
           upload_Mbps: 0,
-          bytes_recv: bandwidth.value[iface]?.bytes_recv || 0, // garder les compteurs pour ne pas perdre le cumul
+          bytes_recv: bandwidth.value[iface]?.bytes_recv || 0,
           bytes_sent: bandwidth.value[iface]?.bytes_sent || 0,
         };
         latency.value[iface] = {
@@ -227,7 +291,6 @@ export const useNetworkStore = defineStore("network", () => {
     connected.value = anySuccess;
     checkThresholds();
 
-    // Initialiser les compteurs de session après le premier succès
     if (anySuccess && !sessionStarted.value) {
       initSessionCounters();
     }
@@ -237,11 +300,15 @@ export const useNetworkStore = defineStore("network", () => {
     fetchMetrics();
     if (_timer) clearInterval(_timer);
     _timer = setInterval(fetchMetrics, interval.value * 1000);
+    startInterfaceRefresh();
+    startConnectionsRefresh(); // ← ajouté
   }
 
   function stopPolling() {
     clearInterval(_timer);
     _timer = null;
+    stopInterfaceRefresh();
+    stopConnectionsRefresh(); // ← ajouté
   }
 
   function setInterval_(val) {
@@ -253,7 +320,7 @@ export const useNetworkStore = defineStore("network", () => {
   }
 
   // ── Compteurs cumulatifs par session ───────────────
-  const sessionCounters = ref({}); // { ifaceName: { bytes_recv: 0, bytes_sent: 0 } }
+  const sessionCounters = ref({});
   const sessionStarted = ref(false);
 
   function initSessionCounters() {
@@ -276,14 +343,14 @@ export const useNetworkStore = defineStore("network", () => {
     sessionStarted.value = false;
   }
 
-  // Retourne le total reçu/envoyé depuis le début de la session pour une interface
   function getInterfaceTotal(ifaceName) {
     const bw = bandwidth.value[ifaceName];
     const session = sessionCounters.value[ifaceName];
     if (!bw || !session) return { received: 0, sent: 0 };
-    const received = bw.bytes_recv - session.bytes_recv;
-    const sent = bw.bytes_sent - session.bytes_sent;
-    return { received, sent };
+    return {
+      received: bw.bytes_recv - session.bytes_recv,
+      sent: bw.bytes_sent - session.bytes_sent,
+    };
   }
 
   // ── Thème ───────────────────────────────────────────
@@ -308,18 +375,18 @@ export const useNetworkStore = defineStore("network", () => {
   }
 
   // ── Getters globaux ────────────────────────────────
-  const totalDownload = computed(() => {
-    return Object.values(bandwidth.value).reduce(
+  const totalDownload = computed(() =>
+    Object.values(bandwidth.value).reduce(
       (sum, b) => sum + (b.download_Mbps || 0),
       0,
-    );
-  });
-  const totalUpload = computed(() => {
-    return Object.values(bandwidth.value).reduce(
+    ),
+  );
+  const totalUpload = computed(() =>
+    Object.values(bandwidth.value).reduce(
       (sum, b) => sum + (b.upload_Mbps || 0),
       0,
-    );
-  });
+    ),
+  );
 
   // ── Retour ──────────────────────────────────────────
   return {
@@ -335,6 +402,7 @@ export const useNetworkStore = defineStore("network", () => {
     errors,
     totalDownload,
     totalUpload,
+    connections,
     startPolling,
     stopPolling,
     setInterval_,
@@ -344,5 +412,9 @@ export const useNetworkStore = defineStore("network", () => {
     fetchInterfaces,
     getInterfaceTotal,
     resetSession,
+    fetchConnections,
+    refreshInterfaces,
+    startInterfaceRefresh,
+    stopInterfaceRefresh,
   };
 });

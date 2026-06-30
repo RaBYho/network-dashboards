@@ -1,24 +1,24 @@
 <template>
-  <div class="flex flex-col h-full bg-gray-50">
+  <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
     <!-- Topbar -->
     <div
-      class="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200"
+      class="flex items-center justify-between px-5 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
     >
       <div class="flex items-center gap-2">
         <i class="ti ti-alert-triangle text-red-500 text-base"></i>
-        <span class="text-sm font-medium text-gray-800"
+        <span class="text-sm font-medium text-gray-800 dark:text-gray-100"
           >Erreurs & anomalies</span
         >
       </div>
       <div class="flex items-center gap-2">
         <button
-          class="text-xs px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center gap-1"
+          class="text-xs px-3 py-1 rounded border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors"
           @click="exportCsv"
         >
           <i class="ti ti-download text-xs"></i> Export CSV
         </button>
         <button
-          class="text-xs px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center gap-1"
+          class="text-xs px-3 py-1 rounded border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors"
           @click="store.errors.splice(0)"
         >
           <i class="ti ti-trash text-xs"></i> Vider
@@ -27,211 +27,258 @@
     </div>
 
     <!-- Contenu -->
-    <div class="flex-1 p-4 flex flex-col gap-3 overflow-auto">
-      <!-- KPI row -->
-      <div class="grid grid-cols-4 gap-3">
-        <KpiCard
-          label="Erreurs critiques"
-          :value="criticalCount"
-          unit=""
-          sub="dernières 24h"
-          icon="ti-circle-x"
-          :value-class="criticalCount > 0 ? 'text-red-600' : 'text-green-600'"
-        />
-        <KpiCard
-          label="Avertissements"
-          :value="warnCount"
-          unit=""
-          sub="dernières 24h"
-          icon="ti-alert-circle"
-          :value-class="warnCount > 0 ? 'text-amber-500' : 'text-green-600'"
-        />
-        <KpiCard
-          label="Paquets perdus"
-          :value="totalPacketLoss"
-          unit=""
-          sub="total cumulé"
-          icon="ti-packages"
-          value-class="text-gray-800"
-        />
-        <KpiCard
-          label="Taux d'erreur"
-          :value="avgErrorRate"
-          unit="%"
-          sub="toutes interfaces"
-          icon="ti-check"
-          :value-class="
-            parseFloat(avgErrorRate) > store.thresholds.error_rate_pct
-              ? 'text-red-600'
-              : 'text-green-600'
-          "
-        />
+    <div class="flex-1 p-4 flex flex-col gap-4 overflow-auto">
+      <!-- Section KPI -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+          Résumé des erreurs
+        </h2>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <KpiCard
+            label="Erreurs critiques"
+            :value="criticalCount"
+            unit=""
+            sub="depuis le début"
+            icon="ti-circle-x"
+            :value-class="criticalCount > 0 ? 'text-red-600' : 'text-green-600'"
+          />
+          <KpiCard
+            label="Avertissements"
+            :value="warnCount"
+            unit=""
+            sub="depuis le début"
+            icon="ti-alert-circle"
+            :value-class="warnCount > 0 ? 'text-amber-500' : 'text-green-600'"
+          />
+          <KpiCard
+            label="Paquets perdus"
+            :value="totalPacketLoss"
+            unit=""
+            sub="total cumulé"
+            icon="ti-packages"
+            value-class="text-gray-800 dark:text-gray-100"
+          />
+          <KpiCard
+            label="Taux d'erreur"
+            :value="avgErrorRate"
+            unit="%"
+            sub="toutes interfaces"
+            icon="ti-check"
+            :value-class="
+              parseFloat(avgErrorRate) > store.thresholds.error_rate_pct
+                ? 'text-red-600'
+                : 'text-green-600'
+            "
+          />
+        </div>
       </div>
 
-      <!-- Histogramme -->
-      <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <div class="flex items-center justify-between mb-3">
-          <span
-            class="text-xs font-medium text-gray-500 flex items-center gap-1"
-          >
-            <i class="ti ti-chart-bar"></i>
-            Fréquence des erreurs — dernière heure
-          </span>
-          <div class="flex gap-3 text-xs text-gray-400">
-            <span
-              ><span
-                class="inline-block w-2 h-2 rounded-sm bg-red-500 align-middle mr-1"
-              ></span
-              >Critique</span
-            >
-            <span
-              ><span
-                class="inline-block w-2 h-2 rounded-sm bg-amber-400 align-middle mr-1"
-              ></span
-              >Avertissement</span
-            >
-          </div>
-        </div>
-        <apexchart
-          type="bar"
-          height="100"
-          :options="histoOptions"
-          :series="histoSeries"
-        />
-      </div>
-
-      <!-- Journal -->
-      <div class="flex-1 bg-white border border-gray-200 rounded-lg p-4">
-        <div class="flex items-center justify-between mb-3">
-          <span
-            class="text-xs font-medium text-gray-500 flex items-center gap-1"
-          >
-            <i class="ti ti-list"></i> Journal des erreurs
-          </span>
-          <!-- Filtres -->
-          <div class="flex items-center gap-2 flex-wrap">
-            <button
-              v-for="f in severityFilters"
-              :key="f.value"
-              class="text-xs px-3 py-1 rounded-full border transition-colors"
-              :class="
-                activeSeverity === f.value
-                  ? f.activeClass
-                  : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-              "
-              @click="activeSeverity = f.value"
-            >
-              {{ f.label }}
-            </button>
-            <div class="w-px h-4 bg-gray-200"></div>
-            <button
-              v-for="f in ifaceFilters"
-              :key="f.value"
-              class="text-xs px-3 py-1 rounded-full border transition-colors"
-              :class="
-                activeIface === f.value
-                  ? 'bg-gray-100 text-gray-700 border-gray-300'
-                  : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-              "
-              @click="activeIface = f.value"
-            >
-              {{ f.label }}
-            </button>
-            <div class="w-px h-4 bg-gray-200"></div>
-            <input
-              v-model="search"
-              type="text"
-              placeholder="Rechercher..."
-              class="text-xs px-3 py-1 rounded border border-gray-200 bg-gray-50 text-gray-700 w-36 focus:outline-none focus:border-gray-300"
-            />
-          </div>
-        </div>
-
-        <!-- Table -->
-        <div class="overflow-auto">
-          <table class="w-full text-xs border-collapse">
-            <thead>
-              <tr class="border-b border-gray-100 bg-gray-50">
-                <th class="text-left py-2 px-3 font-medium text-gray-400 w-32">
-                  Horodatage
-                </th>
-                <th class="text-left py-2 px-3 font-medium text-gray-400 w-24">
-                  Sévérité
-                </th>
-                <th class="text-left py-2 px-3 font-medium text-gray-400 w-20">
-                  Interface
-                </th>
-                <th class="text-left py-2 px-3 font-medium text-gray-400">
-                  Message
-                </th>
-                <th class="text-left py-2 px-3 font-medium text-gray-400 w-32">
-                  Valeur
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="err in paginatedErrors"
-                :key="err.id"
-                class="border-b border-gray-50 hover:bg-gray-50 transition-colors"
-              >
-                <td class="py-2 px-3 font-mono text-gray-400">
-                  {{ err.timestamp }}
-                </td>
-                <td class="py-2 px-3">
-                  <span
-                    class="px-2 py-0.5 rounded-full font-medium"
-                    :class="severityClass(err.severity)"
-                  >
-                    {{ severityLabel(err.severity) }}
-                  </span>
-                </td>
-                <td class="py-2 px-3">
-                  <span
-                    class="px-2 py-0.5 rounded-full"
-                    :class="ifaceClass(err.iface)"
-                  >
-                    {{ err.iface }}
-                  </span>
-                </td>
-                <td class="py-2 px-3 text-gray-700">{{ err.message }}</td>
-                <td class="py-2 px-3 font-mono text-gray-400">
-                  {{ err.value }}
-                </td>
-              </tr>
-              <tr v-if="paginatedErrors.length === 0">
-                <td colspan="5" class="py-8 text-center text-gray-400">
-                  <i class="ti ti-check text-green-500 text-lg block mb-1"></i>
-                  Aucune erreur trouvée
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination -->
+      <!-- Section Histogramme -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+          Fréquence des erreurs (dernière heure)
+        </h2>
         <div
-          class="flex items-center justify-between pt-3 border-t border-gray-100 mt-2"
+          class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
         >
-          <span class="text-xs text-gray-400">
-            Affichage {{ paginationStart }}–{{ paginationEnd }} sur
-            {{ filteredErrors.length }} erreurs
-          </span>
-          <div class="flex gap-2">
-            <button
-              class="text-xs px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40"
-              :disabled="currentPage === 1"
-              @click="currentPage--"
+          <apexchart
+            type="bar"
+            height="100"
+            :options="histoOptions"
+            :series="histoSeries"
+          />
+        </div>
+      </div>
+
+      <!-- Section Journal -->
+      <div class="flex-1 flex flex-col min-h-0">
+        <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+          Journal des erreurs
+        </h2>
+        <div
+          class="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col min-h-0"
+        >
+          <!-- Filtres -->
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <span
+              class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1"
             >
-              ← Préc.
-            </button>
-            <button
-              class="text-xs px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40"
-              :disabled="currentPage >= totalPages"
-              @click="currentPage++"
-            >
-              Suiv. →
-            </button>
+              <i class="ti ti-list"></i> {{ filteredErrors.length }} entrée(s)
+            </span>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button
+                v-for="f in severityFilters"
+                :key="f.value"
+                class="text-xs px-3 py-1 rounded-full border transition-colors"
+                :class="
+                  activeSeverity === f.value
+                    ? f.activeClass
+                    : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                "
+                @click="activeSeverity = f.value"
+              >
+                {{ f.label }}
+              </button>
+              <div class="w-px h-4 bg-gray-200 dark:bg-gray-600"></div>
+              <button
+                v-for="f in ifaceFilters"
+                :key="f.value"
+                class="text-xs px-3 py-1 rounded-full border transition-colors"
+                :class="
+                  activeIface === f.value
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-500'
+                    : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                "
+                @click="activeIface = f.value"
+              >
+                {{ f.label }}
+              </button>
+              <div class="w-px h-4 bg-gray-200 dark:bg-gray-600"></div>
+              <div class="relative">
+                <i
+                  class="ti ti-search text-xs text-gray-400 absolute left-2 top-1/2 -translate-y-1/2"
+                ></i>
+                <input
+                  v-model="search"
+                  type="text"
+                  placeholder="Rechercher..."
+                  class="text-xs pl-7 pr-7 py-1.5 rounded border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 w-40 focus:outline-none focus:border-blue-300 dark:focus:border-blue-600"
+                />
+                <button
+                  v-if="search"
+                  @click="search = ''"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <i class="ti ti-x text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tableau -->
+          <div class="flex-1 overflow-auto min-h-0">
+            <table class="w-full text-xs border-collapse">
+              <thead>
+                <tr
+                  class="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 sticky top-0"
+                >
+                  <th
+                    class="text-left py-2 px-3 font-medium text-gray-400 dark:text-gray-500 w-32"
+                  >
+                    Horodatage
+                  </th>
+                  <th
+                    class="text-left py-2 px-3 font-medium text-gray-400 dark:text-gray-500 w-24"
+                  >
+                    Sévérité
+                  </th>
+                  <th
+                    class="text-left py-2 px-3 font-medium text-gray-400 dark:text-gray-500 w-20"
+                  >
+                    Interface
+                  </th>
+                  <th
+                    class="text-left py-2 px-3 font-medium text-gray-400 dark:text-gray-500"
+                  >
+                    Message
+                  </th>
+                  <th
+                    class="text-left py-2 px-3 font-medium text-gray-400 dark:text-gray-500 w-32"
+                  >
+                    Valeur
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="err in paginatedErrors"
+                  :key="err.id"
+                  class="border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <td
+                    class="py-2 px-3 font-mono text-gray-400 dark:text-gray-500"
+                  >
+                    {{ err.timestamp }}
+                  </td>
+                  <td class="py-2 px-3">
+                    <span
+                      class="px-2 py-0.5 rounded-full font-medium"
+                      :class="severityClass(err.severity)"
+                      >{{ severityLabel(err.severity) }}</span
+                    >
+                  </td>
+                  <td class="py-2 px-3">
+                    <span
+                      class="px-2 py-0.5 rounded-full"
+                      :class="ifaceClass(err.iface)"
+                      >{{ err.iface }}</span
+                    >
+                  </td>
+                  <td class="py-2 px-3 text-gray-700 dark:text-gray-200">
+                    {{ err.message }}
+                  </td>
+                  <td
+                    class="py-2 px-3 font-mono text-gray-400 dark:text-gray-500"
+                  >
+                    {{ err.value }}
+                  </td>
+                </tr>
+                <tr v-if="paginatedErrors.length === 0">
+                  <td
+                    colspan="5"
+                    class="py-8 text-center text-gray-400 dark:text-gray-500"
+                  >
+                    <i
+                      class="ti ti-check text-green-500 text-lg block mb-1"
+                    ></i>
+                    Aucune erreur trouvée
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div
+            class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700 mt-2"
+          >
+            <span class="text-xs text-gray-400 dark:text-gray-500">
+              Affichage {{ paginationStart }}–{{ paginationEnd }} sur
+              {{ filteredErrors.length }} erreurs
+            </span>
+            <div class="flex gap-2 items-center">
+              <button
+                class="text-xs px-2 py-1 rounded border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40"
+                :disabled="currentPage === 1"
+                @click="currentPage = 1"
+              >
+                «
+              </button>
+              <button
+                class="text-xs px-3 py-1 rounded border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40"
+                :disabled="currentPage === 1"
+                @click="currentPage--"
+              >
+                ← Préc.
+              </button>
+              <span class="text-xs text-gray-400 dark:text-gray-500"
+                >{{ currentPage }} / {{ totalPages }}</span
+              >
+              <button
+                class="text-xs px-3 py-1 rounded border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40"
+                :disabled="currentPage >= totalPages"
+                @click="currentPage++"
+              >
+                Suiv. →
+              </button>
+              <button
+                class="text-xs px-2 py-1 rounded border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40"
+                :disabled="currentPage >= totalPages"
+                @click="currentPage = totalPages"
+              >
+                »
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -245,6 +292,9 @@ import { useNetworkStore } from "../stores/networkStore";
 import KpiCard from "../components/layout/KpiCard.vue";
 
 const store = useNetworkStore();
+const isDark = computed(() =>
+  document.documentElement.classList.contains("dark"),
+);
 
 // ── Filtres ──────────────────────────────────────────
 const activeSeverity = ref("all");
@@ -257,28 +307,31 @@ const severityFilters = [
   {
     value: "all",
     label: "Tous",
-    activeClass: "bg-gray-100 text-gray-700 border-gray-300",
+    activeClass:
+      "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-500",
   },
   {
     value: "critical",
     label: "Critique",
-    activeClass: "bg-red-50 text-red-700 border-red-300",
+    activeClass:
+      "bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700",
   },
   {
     value: "warn",
     label: "Avertissement",
-    activeClass: "bg-amber-50 text-amber-700 border-amber-300",
+    activeClass:
+      "bg-amber-50 dark:bg-amber-900 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700",
   },
   {
     value: "info",
     label: "Info",
-    activeClass: "bg-blue-50 text-blue-700 border-blue-300",
+    activeClass:
+      "bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700",
   },
 ];
 
 const ifaceFilters = computed(() => {
   const filters = [{ value: "all", label: "Toutes" }];
-  // Ajouter les interfaces surveillées comme filtres
   store.interfaces
     .filter((i) => i.monitored)
     .forEach((iface) => {
@@ -327,16 +380,11 @@ const warnCount = computed(
   () => store.errors.filter((e) => e.severity === "warn").length,
 );
 
-// ✅ Utiliser les interfaces surveillées pour agréger les pertes de paquets et le taux d'erreur
 const monitoredInterfaces = computed(() =>
   store.interfaces.filter((i) => i.monitored).map((i) => i.name),
 );
 
 const totalPacketLoss = computed(() => {
-  // Somme des paquets perdus (packet_loss_pct) pour toutes les interfaces surveillées
-  // On peut considérer le taux de perte comme un indicateur ; on fait la somme des pourcentages pour avoir une idée du total
-  // ou on prend la moyenne ? L'ancienne version faisait `(latency.eth0.packet_loss_pct + latency.wlan0.packet_loss_pct) * 10`
-  // Nous allons faire la somme des pourcentages * 10 (arrondi) pour rester proche de l'ancien comportement
   const sum = monitoredInterfaces.value.reduce((acc, name) => {
     const lat = store.latency[name];
     return acc + (lat ? lat.packet_loss_pct : 0);
@@ -355,9 +403,11 @@ const avgErrorRate = computed(() => {
 
 // ── Helpers badge ────────────────────────────────────
 function severityClass(s) {
-  if (s === "critical") return "bg-red-50 text-red-700";
-  if (s === "warn") return "bg-amber-50 text-amber-700";
-  return "bg-blue-50 text-blue-700";
+  if (s === "critical")
+    return "bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300";
+  if (s === "warn")
+    return "bg-amber-50 dark:bg-amber-900 text-amber-700 dark:text-amber-300";
+  return "bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300";
 }
 function severityLabel(s) {
   if (s === "critical") return "Critique";
@@ -365,10 +415,11 @@ function severityLabel(s) {
   return "Info";
 }
 function ifaceClass(i) {
-  // On peut utiliser les noms réels ; pour garder des couleurs cohérentes
-  if (i && i.includes("w")) return "bg-green-50 text-green-700";
-  if (i && i.includes("e")) return "bg-purple-50 text-purple-700";
-  return "bg-gray-100 text-gray-500";
+  if (i && i.includes("w"))
+    return "bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300";
+  if (i && i.includes("e"))
+    return "bg-purple-50 dark:bg-purple-900 text-purple-700 dark:text-purple-300";
+  return "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400";
 }
 
 // ── Histogramme ──────────────────────────────────────
@@ -377,6 +428,7 @@ const histoOptions = computed(() => ({
     toolbar: { show: false },
     background: "transparent",
     stacked: true,
+    foreColor: isDark.value ? "#9CA3AF" : "#6B7280",
   },
   plotOptions: { bar: { columnWidth: "70%", borderRadius: 2 } },
   colors: ["#EF4444", "#FBBF24"],
@@ -396,21 +448,21 @@ const histoOptions = computed(() => ({
       "-5m",
       "now",
     ],
-    labels: { style: { fontSize: "9px", colors: "#9CA3AF" } },
+    labels: { style: { fontSize: "9px" } },
     axisBorder: { show: false },
     axisTicks: { show: false },
   },
-  yaxis: {
-    labels: { style: { fontSize: "9px", colors: "#9CA3AF" } },
+  yaxis: { labels: { style: { fontSize: "9px" } } },
+  grid: {
+    borderColor: isDark.value ? "#374151" : "#F3F4F6",
+    strokeDashArray: 4,
   },
-  grid: { borderColor: "#F3F4F6", strokeDashArray: 4 },
   legend: { show: false },
-  tooltip: { theme: "light" },
+  tooltip: { theme: isDark.value ? "dark" : "light" },
   dataLabels: { enabled: false },
 }));
 
 const histoSeries = computed(() => {
-  // Répartit les erreurs dans les 13 tranches de 5 minutes
   const critBuckets = Array(13).fill(0);
   const warnBuckets = Array(13).fill(0);
   const now = Date.now();

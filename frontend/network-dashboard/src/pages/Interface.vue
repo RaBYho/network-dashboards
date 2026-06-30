@@ -1,12 +1,12 @@
 <template>
-  <div class="flex flex-col h-full bg-gray-50">
+  <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
     <!-- Topbar -->
     <div
-      class="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200"
+      class="flex items-center justify-between px-5 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
     >
       <div class="flex items-center gap-2">
         <i :class="`ti ${ifaceIcon} text-blue-500 text-base`"></i>
-        <span class="text-sm font-medium text-gray-800"
+        <span class="text-sm font-medium text-gray-800 dark:text-gray-100"
           >Interface — {{ ifaceName }}</span
         >
         <span
@@ -16,7 +16,9 @@
         <span
           class="text-xs px-2 py-0.5 rounded-full"
           :class="
-            isUp ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
+            isUp
+              ? 'bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300'
+              : 'bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-300'
           "
         >
           {{ isUp ? "UP" : "DOWN" }}
@@ -30,219 +32,268 @@
             class="text-xs px-3 py-1 rounded-full border transition-colors"
             :class="
               activePeriod === p.value
-                ? 'bg-blue-50 text-blue-700 border-blue-300'
-                : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                ? 'bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700'
+                : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
             "
             @click="activePeriod = p.value"
           >
             {{ p.label }}
           </button>
         </div>
-        <span class="text-xs text-gray-400">Màj : {{ store.interval }}s</span>
+        <span class="text-xs text-gray-400 dark:text-gray-500"
+          >Màj : {{ store.interval }}s</span
+        >
       </div>
     </div>
 
     <!-- Contenu -->
-    <div class="flex-1 p-4 flex flex-col gap-3 overflow-auto">
-      <!-- KPI row -->
-      <div class="grid grid-cols-5 gap-3">
-        <KpiCard
-          label="Download"
-          :value="bw.download_Mbps.toFixed(1)"
-          unit="Mbps"
-          :sub="`${(bw.download_Mbps / 8).toFixed(2)} Mo/s`"
-          icon="ti-arrow-down"
-          value-class="text-blue-600"
-        />
-        <KpiCard
-          label="Upload"
-          :value="bw.upload_Mbps.toFixed(1)"
-          unit="Mbps"
-          :sub="`${(bw.upload_Mbps / 8).toFixed(2)} Mo/s`"
-          icon="ti-arrow-up"
-          value-class="text-blue-600"
-        />
-        <KpiCard
-          label="Latence"
-          :value="lat.avg_ms.toFixed(0)"
-          unit="ms"
-          :sub="`jitter ${lat.jitter_ms.toFixed(1)}ms`"
-          icon="ti-clock"
-          :value-class="
-            lat.avg_ms > store.thresholds.latency_ms
-              ? 'text-amber-500'
-              : 'text-green-600'
-          "
-        />
-        <KpiCard
-          label="Perte paquets"
-          :value="lat.packet_loss_pct.toFixed(1)"
-          unit="%"
-          sub="via ping"
-          icon="ti-alert-triangle"
-          :value-class="
-            lat.packet_loss_pct > store.thresholds.packet_loss_pct
-              ? 'text-red-600'
-              : 'text-green-600'
-          "
-        />
-        <KpiCard
-          label="Connexions"
-          :value="connexions"
-          unit=""
-          sub="actives"
-          icon="ti-users"
-          value-class="text-gray-800"
-        />
-      </div>
-
-      <!-- Graphique + Infos -->
-      <div class="grid grid-cols-3 gap-3">
-        <!-- Grand graphique débit + latence -->
-        <div class="col-span-2 bg-white border border-gray-200 rounded-lg p-4">
-          <div class="flex items-center justify-between mb-3">
-            <span
-              class="text-xs font-medium text-gray-500 flex items-center gap-1"
-            >
-              <i class="ti ti-chart-line"></i>
-              Débit &amp; latence — {{ ifaceName }}
-            </span>
-            <div class="flex gap-4 text-xs text-gray-400">
-              <span
-                ><span
-                  class="inline-block w-3 h-0.5 bg-blue-500 align-middle mr-1"
-                ></span
-                >Download</span
-              >
-              <span
-                ><span
-                  class="inline-block w-3 h-0.5 bg-blue-300 align-middle mr-1"
-                  style="border-top: 2px dashed #93c5fd"
-                ></span
-                >Upload</span
-              >
-              <span
-                ><span
-                  class="inline-block w-3 h-0.5 bg-purple-500 align-middle mr-1"
-                ></span
-                >RTT</span
-              >
-            </div>
-          </div>
-          <apexchart
-            type="line"
-            height="200"
-            :options="chartOptions"
-            :series="series"
+    <div class="flex-1 p-4 flex flex-col gap-4 overflow-auto">
+      <!-- Section KPI -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+          Métriques de {{ ifaceName }}
+        </h2>
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <KpiCard
+            label="Download"
+            :value="bw.download_Mbps.toFixed(1)"
+            unit="Mbps"
+            :sub="`${(bw.download_Mbps / 8).toFixed(2)} Mo/s`"
+            icon="ti-arrow-down"
+            value-class="text-blue-600"
+          />
+          <KpiCard
+            label="Upload"
+            :value="bw.upload_Mbps.toFixed(1)"
+            unit="Mbps"
+            :sub="`${(bw.upload_Mbps / 8).toFixed(2)} Mo/s`"
+            icon="ti-arrow-up"
+            value-class="text-blue-600"
+          />
+          <KpiCard
+            label="Latence"
+            :value="lat.avg_ms.toFixed(0)"
+            unit="ms"
+            :sub="`jitter ${lat.jitter_ms.toFixed(1)}ms`"
+            icon="ti-clock"
+            :value-class="
+              lat.avg_ms > store.thresholds.latency_ms
+                ? 'text-amber-500'
+                : 'text-green-600'
+            "
+          />
+          <KpiCard
+            label="Perte paquets"
+            :value="lat.packet_loss_pct.toFixed(1)"
+            unit="%"
+            sub="via ping"
+            icon="ti-alert-triangle"
+            :value-class="
+              lat.packet_loss_pct > store.thresholds.packet_loss_pct
+                ? 'text-red-600'
+                : 'text-green-600'
+            "
+          />
+          <KpiCard
+            label="Connexions"
+            :value="connexions"
+            unit=""
+            sub="actives"
+            icon="ti-users"
+            value-class="text-gray-800 dark:text-gray-100"
           />
         </div>
+      </div>
 
-        <!-- Informations interface -->
-        <div class="bg-white border border-gray-200 rounded-lg p-4">
+      <!-- Section Graphique + Infos -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+          Débit & latence
+        </h2>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <div
-            class="text-xs font-medium text-gray-500 flex items-center gap-1 mb-3"
+            class="lg:col-span-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
           >
-            <i class="ti ti-info-circle"></i> Informations
-          </div>
-          <table class="w-full text-xs">
-            <tbody>
-              <tr
-                v-for="info in ifaceInfos"
-                :key="info.label"
-                class="border-b border-gray-100 last:border-none"
+            <div class="flex items-center justify-between mb-3">
+              <span
+                class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1"
               >
-                <td class="py-2 text-gray-400 w-28">{{ info.label }}</td>
-                <td class="py-2 font-mono font-medium text-gray-700">
-                  {{ info.value }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                <i class="ti ti-chart-line"></i> {{ ifaceName }}
+              </span>
+              <div
+                class="flex gap-4 text-xs text-gray-400 dark:text-gray-500 flex-wrap"
+              >
+                <span
+                  ><span
+                    class="inline-block w-3 h-0.5 bg-blue-500 align-middle mr-1"
+                  ></span
+                  >Download</span
+                >
+                <span
+                  ><span
+                    class="inline-block w-3 h-0.5 bg-blue-300 align-middle mr-1"
+                    style="border-top: 2px dashed #93c5fd"
+                  ></span
+                  >Upload</span
+                >
+                <span
+                  ><span
+                    class="inline-block w-3 h-0.5 bg-purple-500 align-middle mr-1"
+                  ></span
+                  >RTT</span
+                >
+              </div>
+            </div>
+            <apexchart
+              type="line"
+              height="200"
+              :options="chartOptions"
+              :series="series"
+            />
+          </div>
+
+          <!-- Informations interface -->
+          <div
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+          >
+            <div
+              class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-3"
+            >
+              <i class="ti ti-info-circle"></i> Informations
+            </div>
+            <table class="w-full text-xs">
+              <tbody>
+                <tr
+                  v-for="info in ifaceInfos"
+                  :key="info.label"
+                  class="border-b border-gray-100 dark:border-gray-700 last:border-none"
+                >
+                  <td class="py-2 text-gray-400 dark:text-gray-500 w-28">
+                    {{ info.label }}
+                  </td>
+                  <td
+                    class="py-2 font-mono font-medium text-gray-700 dark:text-gray-200"
+                  >
+                    {{ info.value }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Ligne du bas -->
-      <div class="grid grid-cols-3 gap-3">
-        <!-- Trafic cumulé -->
-        <div class="bg-white border border-gray-200 rounded-lg p-4">
+      <!-- Section Bas : Trafic, Erreurs, TCP -->
+      <div>
+        <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
+          Détails et santé
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <!-- Trafic cumulé -->
           <div
-            class="text-xs font-medium text-gray-500 flex items-center gap-1 mb-3"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
           >
-            <i class="ti ti-database"></i> Trafic cumulé
-          </div>
-          <!-- Utilisation des totaux dynamiques -->
-          <div class="text-xs">
-            <div class="flex justify-between py-2 border-b border-gray-100">
-              <span class="text-gray-500">Total reçu</span>
-              <span class="font-medium text-gray-700">
-                {{ (totals.received / 1_048_576).toFixed(2) }} Mo
-              </span>
-            </div>
-            <div class="flex justify-between py-2 border-b border-gray-100">
-              <span class="text-gray-500">Total envoyé</span>
-              <span class="font-medium text-gray-700">
-                {{ (totals.sent / 1_048_576).toFixed(2) }} Mo
-              </span>
-            </div>
-            <div class="flex justify-between py-2 border-b border-gray-100">
-              <span class="text-gray-500">Paquets reçus</span>
-              <span class="font-medium text-gray-700">
-                {{ (hist.download.length * 1000).toLocaleString() }}
-              </span>
-            </div>
-            <div class="flex justify-between py-2">
-              <span class="text-gray-500">Paquets envoyés</span>
-              <span class="font-medium text-gray-700">
-                {{ (hist.upload.length * 300).toLocaleString() }}
-              </span>
-            </div>
-          </div>
-          <div class="mt-3">
-            <UsageBar
-              :label="`Utilisation (${bw.download_Mbps.toFixed(1)} / ${maxSpeed} Mbps)`"
-              :value="parseFloat(usagePct)"
-            />
-          </div>
-        </div>
-
-        <!-- Compteurs d'erreurs -->
-        <div class="bg-white border border-gray-200 rounded-lg p-4">
-          <div
-            class="text-xs font-medium text-gray-500 flex items-center gap-1 mb-3"
-          >
-            <i class="ti ti-alert-circle"></i> Compteurs d'erreurs
-          </div>
-          <div
-            v-for="e in errorStats"
-            :key="e.label"
-            class="flex justify-between items-center py-2 border-b border-gray-100 last:border-none text-xs"
-          >
-            <span class="text-gray-500">{{ e.label }}</span>
-            <span
-              class="font-medium"
-              :class="e.val > 0 ? 'text-red-500' : 'text-green-600'"
+            <div
+              class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-3"
             >
-              {{ e.val }}
-            </span>
+              <i class="ti ti-database"></i> Trafic cumulé
+            </div>
+            <div class="text-xs">
+              <div
+                class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700"
+              >
+                <span class="text-gray-500 dark:text-gray-400">Total reçu</span>
+                <span class="font-medium text-gray-700 dark:text-gray-200">{{
+                  formatBytes(totals.received)
+                }}</span>
+              </div>
+              <div
+                class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700"
+              >
+                <span class="text-gray-500 dark:text-gray-400"
+                  >Total envoyé</span
+                >
+                <span class="font-medium text-gray-700 dark:text-gray-200">{{
+                  formatBytes(totals.sent)
+                }}</span>
+              </div>
+              <div
+                class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700"
+              >
+                <span class="text-gray-500 dark:text-gray-400"
+                  >Paquets reçus</span
+                >
+                <span class="font-medium text-gray-700 dark:text-gray-200">{{
+                  (hist.download.length * 1000).toLocaleString()
+                }}</span>
+              </div>
+              <div class="flex justify-between py-2">
+                <span class="text-gray-500 dark:text-gray-400"
+                  >Paquets envoyés</span
+                >
+                <span class="font-medium text-gray-700 dark:text-gray-200">{{
+                  (hist.upload.length * 300).toLocaleString()
+                }}</span>
+              </div>
+            </div>
+            <div class="mt-3">
+              <UsageBar
+                :label="`Utilisation (${bw.download_Mbps.toFixed(1)} / ${maxSpeed} Mbps)`"
+                :value="parseFloat(usagePct)"
+              />
+            </div>
           </div>
-        </div>
 
-        <!-- Connexions TCP -->
-        <div class="bg-white border border-gray-200 rounded-lg p-4">
+          <!-- Compteurs d'erreurs -->
           <div
-            class="text-xs font-medium text-gray-500 flex items-center gap-1 mb-3"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
           >
-            <i class="ti ti-plug"></i> Connexions TCP
+            <div
+              class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-3"
+            >
+              <i class="ti ti-alert-circle"></i> Compteurs d'erreurs
+            </div>
+            <div
+              v-for="e in errorStats"
+              :key="e.label"
+              class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700 last:border-none text-xs"
+            >
+              <span class="text-gray-500 dark:text-gray-400">{{
+                e.label
+              }}</span>
+              <span
+                class="font-medium"
+                :class="e.val > 0 ? 'text-red-500' : 'text-green-600'"
+                >{{ e.val }}</span
+              >
+            </div>
           </div>
+
+          <!-- Connexions TCP (hauteur fixe + scroll) -->
           <div
-            v-for="c in tcpStates"
-            :key="c.state"
-            class="flex justify-between items-center py-2 border-b border-gray-100 last:border-none text-xs"
+            class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
           >
-            <span class="text-gray-500">{{ c.state }}</span>
-            <span class="px-2 py-0.5 rounded-full font-medium" :class="c.class">
-              {{ c.count }}
-            </span>
+            <div
+              class="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-3"
+            >
+              <i class="ti ti-plug"></i> Connexions TCP
+            </div>
+            <div class="max-h-40 overflow-y-auto">
+              <div
+                v-for="c in tcpStates"
+                :key="c.state"
+                class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700 last:border-none text-xs"
+              >
+                <span class="text-gray-500 dark:text-gray-400">{{
+                  c.state
+                }}</span>
+                <span
+                  class="px-2 py-0.5 rounded-full font-medium"
+                  :class="c.class"
+                  >{{ c.count }}</span
+                >
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -259,6 +310,9 @@ import UsageBar from "../components/layout/UsageBar.vue";
 
 const store = useNetworkStore();
 const route = useRoute();
+const isDark = computed(() =>
+  document.documentElement.classList.contains("dark"),
+);
 
 // ── Interface courante ───────────────────────────────
 const ifaceName = computed(() => route.params.name);
@@ -269,7 +323,7 @@ const isUp = computed(
   () => store.interfaces.find((i) => i.name === ifaceName.value)?.up ?? false,
 );
 
-// ── Données du store pour cette interface ────────────
+// ── Données du store ────────────────────────────────
 const bw = computed(
   () =>
     store.bandwidth[ifaceName.value] ?? { download_Mbps: 0, upload_Mbps: 0 },
@@ -297,7 +351,12 @@ const hist = computed(
 // ── Totaux cumulés dynamiques ────────────────────────
 const totals = computed(() => store.getInterfaceTotal(ifaceName.value));
 
-// ── Sélecteur de période ─────────────────────────────
+function formatBytes(bytes) {
+  if (bytes === undefined || bytes === null) return "0 Mo";
+  return (bytes / 1_048_576).toFixed(2) + " Mo";
+}
+
+// ── Périodes ─────────────────────────────────────────
 const periods = [
   { label: "1 min", value: "1m" },
   { label: "1 h", value: "1h" },
@@ -306,23 +365,21 @@ const periods = [
 const activePeriod = ref("1m");
 
 // ── KPI divers ───────────────────────────────────────
-const connexions = computed(
-  () => store.errors.filter((e) => e.iface === ifaceName.value).length + 82,
-);
+const connexions = computed(() => store.connections["global"]?.total || 0);
 const maxSpeed = computed(() => (ifaceName.value?.includes("w") ? 300 : 1000));
 const usagePct = computed(() =>
   Math.min(((bw.value.download_Mbps / maxSpeed.value) * 100).toFixed(1), 100),
 );
 
-// ── Informations interface (dynamiques depuis le store) ──
+// ── Informations interface (dynamiques) ──────────────
 const ifaceInfos = computed(() => {
   const iface = store.interfaces.find((i) => i.name === ifaceName.value) || {};
   return [
     { label: "Adresse IP", value: iface.ipv4 || "—" },
     { label: "Masque", value: iface.netmask || "—" },
-    { label: "Passerelle", value: "192.168.1.1" }, // pas de source simple en standard
+    { label: "Passerelle", value: iface.gateway || "—" },
     { label: "Adresse MAC", value: iface.mac || "—" },
-    { label: "MTU", value: "1500 octets" },
+    { label: "MTU", value: iface.mtu ? `${iface.mtu} octets` : "—" },
     {
       label: "Vitesse max",
       value: ifaceName.value?.includes("w") ? "300 Mbps" : "1000 Mbps",
@@ -351,24 +408,33 @@ const errorStats = computed(() => [
     label: "Paquets perdus ↓",
     val: Math.floor(lat.value.packet_loss_pct * 10),
   },
-  {
-    label: "Paquets perdus ↑",
-    val: Math.floor(lat.value.packet_loss_pct * 5),
-  },
-  {
-    label: "Taux d'erreur",
-    val: `${lat.value.packet_loss_pct.toFixed(2)}%`,
-  },
+  { label: "Paquets perdus ↑", val: Math.floor(lat.value.packet_loss_pct * 5) },
+  { label: "Taux d'erreur", val: `${lat.value.packet_loss_pct.toFixed(2)}%` },
 ]);
 
-// ── Connexions TCP (statiques pour l'instant) ─────────
-const tcpStates = computed(() => [
-  { state: "ESTABLISHED", count: 82, class: "bg-green-50 text-green-700" },
-  { state: "TIME_WAIT", count: 11, class: "bg-amber-50 text-amber-700" },
-  { state: "CLOSE_WAIT", count: 3, class: "bg-amber-50 text-amber-700" },
-  { state: "LISTEN", count: 2, class: "bg-green-50 text-green-700" },
-  { state: "FIN_WAIT", count: 0, class: "bg-red-50 text-red-700" },
-]);
+// ── Connexions TCP (dynamiques depuis le store) ──────
+const tcpStates = computed(() => {
+  const globalConn = store.connections["global"];
+  if (!globalConn || !globalConn.states) return [];
+  const states = globalConn.states;
+  const classMap = {
+    ESTABLISHED:
+      "bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300",
+    TIME_WAIT:
+      "bg-amber-50 dark:bg-amber-900 text-amber-700 dark:text-amber-300",
+    CLOSE_WAIT:
+      "bg-amber-50 dark:bg-amber-900 text-amber-700 dark:text-amber-300",
+    LISTEN: "bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300",
+    FIN_WAIT: "bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300",
+  };
+  return Object.entries(states).map(([state, count]) => ({
+    state,
+    count,
+    class:
+      classMap[state] ||
+      "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400",
+  }));
+});
 
 // ── Options ApexCharts ───────────────────────────────
 const chartOptions = computed(() => ({
@@ -380,16 +446,13 @@ const chartOptions = computed(() => ({
       dynamicAnimation: { speed: 1000 },
     },
     background: "transparent",
+    foreColor: isDark.value ? "#9CA3AF" : "#6B7280",
   },
-  stroke: {
-    curve: "smooth",
-    width: [2, 1.5, 2],
-    dashArray: [0, 5, 0],
-  },
+  stroke: { curve: "smooth", width: [2, 1.5, 2], dashArray: [0, 5, 0] },
   colors: ["#3B82F6", "#93C5FD", "#8B5CF6"],
   xaxis: {
     categories: hist.value.timestamps,
-    labels: { style: { fontSize: "10px", colors: "#9CA3AF" } },
+    labels: { style: { fontSize: "10px" } },
     axisBorder: { show: false },
     axisTicks: { show: false },
   },
@@ -397,19 +460,16 @@ const chartOptions = computed(() => ({
     {
       seriesName: "Download",
       labels: {
-        style: { fontSize: "10px", colors: "#9CA3AF" },
+        style: { fontSize: "10px" },
         formatter: (v) => v.toFixed(0) + "M",
       },
     },
-    {
-      seriesName: "Upload",
-      show: false,
-    },
+    { seriesName: "Upload", show: false },
     {
       seriesName: "RTT",
       opposite: true,
       labels: {
-        style: { fontSize: "10px", colors: "#9CA3AF" },
+        style: { fontSize: "10px" },
         formatter: (v) => v.toFixed(0) + "ms",
       },
     },
@@ -431,9 +491,12 @@ const chartOptions = computed(() => ({
       },
     ],
   },
-  grid: { borderColor: "#F3F4F6", strokeDashArray: 4 },
+  grid: {
+    borderColor: isDark.value ? "#374151" : "#F3F4F6",
+    strokeDashArray: 4,
+  },
   legend: { show: false },
-  tooltip: { theme: "light" },
+  tooltip: { theme: isDark.value ? "dark" : "light" },
 }));
 
 const series = computed(() => [

@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
     <AppSidebar />
-    <main class="flex-1 overflow-auto">
+    <main class="flex-1 overflow-auto lg:pl-0">
       <RouterView v-slot="{ Component }">
         <transition name="page" mode="out-in">
           <component :is="Component" />
