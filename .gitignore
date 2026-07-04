@@ -5,7 +5,7 @@ env/
 __pycache__/
 *.pyc
 *.pyo
-
+node_modules/
 # --- Configuration et Identifiants (TRÈS IMPORTANT) ---
 # Ne jamais pousser vos mots de passe ou clés API !
 .env
@@ -35,3 +35,4 @@ build/
 
 # --- Systèmes de fichiers ---
 /network-dashboards/  # Si vous créez des dossiers de sortie spécifiques
+
