@@ -35,7 +35,6 @@ export const useNetworkStore = defineStore("network", () => {
     }
   }
 
-  // ── Refresh périodique (préserve monitored et les nouveaux champs) ──
   async function refreshInterfaces() {
     try {
       const res = await axios.get(`${apiUrl.value}/api/interfaces`, {
@@ -52,8 +51,8 @@ export const useNetworkStore = defineStore("network", () => {
               ? "ti-wifi"
               : "ti-network",
           up: iface.up,
-          mtu: iface.mtu, // conservé
-          gateway: iface.gateway || "", // conservé
+          mtu: iface.mtu,
+          gateway: iface.gateway || "",
           monitored: existing ? existing.monitored : iface.up,
           ipv4: iface.ipv4 || "",
           netmask: iface.netmask || "",
@@ -78,9 +77,9 @@ export const useNetworkStore = defineStore("network", () => {
     _interfaceTimer = null;
   }
 
-  // ── Métriques temps réel ─────────────────────────────
   const bandwidth = ref({});
   const latency = ref({});
+  const pingResults = ref({});
 
   const history = ref({});
   const MAX_POINTS = 60;
@@ -112,7 +111,6 @@ export const useNetworkStore = defineStore("network", () => {
     }
   }
 
-  // ── Seuils & ping ──────────────────────────────────
   const thresholds = ref({
     latency_ms: 50,
     packet_loss_pct: 10,
@@ -120,6 +118,16 @@ export const useNetworkStore = defineStore("network", () => {
     error_rate_pct: 5,
   });
   const pingTargets = ref(["8.8.8.8", "1.1.1.1", "192.168.1.1"]);
+  const pingGateway = ref(true);
+  const gatewayLatency = ref({});
+
+  function getCurrentGateway() {
+    for (const iface of interfaces.value) {
+      if (iface.gateway) return iface.gateway;
+    }
+    return null;
+  }
+
   const errors = ref([]);
 
   function addError(severity, iface, message, value) {
@@ -157,12 +165,10 @@ export const useNetworkStore = defineStore("network", () => {
     }
   }
 
-  // ── Connexions TCP ──────────────────────────────────
   const connections = ref({});
 
   async function fetchConnections() {
     try {
-      // Appeler l'API sans paramètre pour obtenir les stats globales
       const res = await axios.get(`${apiUrl.value}/api/connections`, {
         timeout: 5000,
       });
@@ -188,7 +194,6 @@ export const useNetworkStore = defineStore("network", () => {
     _connectionsTimer = null;
   }
 
-  // ── Polling principal ───────────────────────────────
   let _timer = null;
 
   function getMonitoredInterfaces() {
@@ -216,6 +221,39 @@ export const useNetworkStore = defineStore("network", () => {
         })
         .catch(() => null),
     );
+
+    const gateway = pingGateway.value ? getCurrentGateway() : null;
+    let gatewayLatencyPromise = null;
+    if (gateway) {
+      gatewayLatencyPromise = monitored.map((iface) =>
+        axios
+          .get(
+            `${apiUrl.value}/api/latency?interface=${iface}&host=${gateway}`,
+            { timeout: 8000 },
+          )
+          .catch(() => null),
+      );
+    }
+
+    // Nouveau : ping vers toutes les autres cibles (sauf 8.8.8.8 déjà fait)
+    const otherTargets = pingTargets.value.slice(1); // on enlève la première (8.8.8.8)
+    const targetPromises = [];
+    const targetHosts = [];
+    for (const iface of monitored) {
+      for (const host of otherTargets) {
+        targetPromises.push(
+          axios
+            .get(
+              `${apiUrl.value}/api/latency?interface=${iface}&host=${host}`,
+              {
+                timeout: 8000,
+              },
+            )
+            .catch(() => null),
+        );
+        targetHosts.push({ iface, host });
+      }
+    }
 
     const bwResults = await Promise.allSettled(bandwidthPromises);
     const latResults = await Promise.allSettled(latencyPromises);
@@ -264,6 +302,61 @@ export const useNetworkStore = defineStore("network", () => {
       }
     });
 
+    if (gatewayLatencyPromise) {
+      const gwResults = await Promise.allSettled(gatewayLatencyPromise);
+      monitored.forEach((iface, idx) => {
+        if (gwResults[idx].status === "fulfilled" && gwResults[idx].value) {
+          const data = gwResults[idx].value.data;
+          gatewayLatency.value[iface] = {
+            avg_ms: Number(data.avg_ms) || 0,
+            min_ms: Number(data.min_ms) || 0,
+            max_ms: Number(data.max_ms) || 0,
+            jitter_ms: Number(data.jitter_ms) || 0,
+            packet_loss_pct: Number(data.packet_loss_pct) || 0,
+          };
+        } else {
+          gatewayLatency.value[iface] = {
+            avg_ms: 0,
+            min_ms: 0,
+            max_ms: 0,
+            jitter_ms: 0,
+            packet_loss_pct: 0,
+          };
+        }
+      });
+    }
+
+    // Traitement des autres cibles de ping
+    if (targetPromises.length > 0) {
+      const targetResults = await Promise.allSettled(targetPromises);
+      targetHosts.forEach(({ iface, host }, idx) => {
+        if (!pingResults.value[iface]) {
+          pingResults.value[iface] = {};
+        }
+        if (
+          targetResults[idx].status === "fulfilled" &&
+          targetResults[idx].value
+        ) {
+          const data = targetResults[idx].value.data;
+          pingResults.value[iface][host] = {
+            avg_ms: Number(data.avg_ms) || 0,
+            min_ms: Number(data.min_ms) || 0,
+            max_ms: Number(data.max_ms) || 0,
+            jitter_ms: Number(data.jitter_ms) || 0,
+            packet_loss_pct: Number(data.packet_loss_pct) || 0,
+          };
+        } else {
+          pingResults.value[iface][host] = {
+            avg_ms: 0,
+            min_ms: 0,
+            max_ms: 0,
+            jitter_ms: 0,
+            packet_loss_pct: 0,
+          };
+        }
+      });
+    }
+
     monitored.forEach((iface) => {
       const bw = bandwidth.value[iface] || { download_Mbps: 0, upload_Mbps: 0 };
       const lat = latency.value[iface] || { avg_ms: 0 };
@@ -301,14 +394,14 @@ export const useNetworkStore = defineStore("network", () => {
     if (_timer) clearInterval(_timer);
     _timer = setInterval(fetchMetrics, interval.value * 1000);
     startInterfaceRefresh();
-    startConnectionsRefresh(); // ← ajouté
+    startConnectionsRefresh();
   }
 
   function stopPolling() {
     clearInterval(_timer);
     _timer = null;
     stopInterfaceRefresh();
-    stopConnectionsRefresh(); // ← ajouté
+    stopConnectionsRefresh();
   }
 
   function setInterval_(val) {
@@ -319,7 +412,6 @@ export const useNetworkStore = defineStore("network", () => {
     }
   }
 
-  // ── Compteurs cumulatifs par session ───────────────
   const sessionCounters = ref({});
   const sessionStarted = ref(false);
 
@@ -353,7 +445,6 @@ export const useNetworkStore = defineStore("network", () => {
     };
   }
 
-  // ── Thème ───────────────────────────────────────────
   const theme = ref("light");
   function applyTheme(val) {
     theme.value = val;
@@ -374,7 +465,14 @@ export const useNetworkStore = defineStore("network", () => {
     }
   }
 
-  // ── Getters globaux ────────────────────────────────
+  const isDark = computed(() => {
+    if (theme.value === "dark") return true;
+    if (theme.value === "system") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    return false;
+  });
+
   const totalDownload = computed(() =>
     Object.values(bandwidth.value).reduce(
       (sum, b) => sum + (b.download_Mbps || 0),
@@ -388,7 +486,6 @@ export const useNetworkStore = defineStore("network", () => {
     ),
   );
 
-  // ── Retour ──────────────────────────────────────────
   return {
     apiUrl,
     interval,
@@ -396,6 +493,7 @@ export const useNetworkStore = defineStore("network", () => {
     interfaces,
     bandwidth,
     latency,
+    pingResults,
     history,
     thresholds,
     pingTargets,
@@ -416,5 +514,9 @@ export const useNetworkStore = defineStore("network", () => {
     refreshInterfaces,
     startInterfaceRefresh,
     stopInterfaceRefresh,
+    pingGateway,
+    gatewayLatency,
+    getCurrentGateway,
+    isDark,
   };
 });

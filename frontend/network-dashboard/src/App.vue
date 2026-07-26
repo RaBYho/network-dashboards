@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-[#1a1a1f] overflow-hidden">
+  <div class="flex h-screen bg-canvas overflow-hidden">
     <AppSidebar />
     <main class="flex-1 overflow-auto lg:pl-0">
       <RouterView v-slot="{ Component }">

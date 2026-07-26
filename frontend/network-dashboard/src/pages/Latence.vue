@@ -40,6 +40,7 @@
           Indicateurs de latence
         </h2>
         <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <!-- Interface 0 RTT -->
           <KpiCard
             v-if="monitoredInterfaces[0]"
             :label="`RTT moyen — ${monitoredInterfaces[0].name}`"
@@ -58,6 +59,7 @@
                 : 'text-green-600'
             "
           />
+          <!-- Interface 1 RTT -->
           <KpiCard
             v-if="monitoredInterfaces[1]"
             :label="`RTT moyen — ${monitoredInterfaces[1].name}`"
@@ -76,6 +78,7 @@
                 : 'text-green-600'
             "
           />
+          <!-- Interface 0 Jitter -->
           <KpiCard
             v-if="monitoredInterfaces[0]"
             :label="`Jitter — ${monitoredInterfaces[0].name}`"
@@ -94,6 +97,7 @@
                 : 'text-green-600'
             "
           />
+          <!-- Interface 1 Jitter -->
           <KpiCard
             v-if="monitoredInterfaces[1]"
             :label="`Jitter — ${monitoredInterfaces[1].name}`"
@@ -112,7 +116,24 @@
                 : 'text-green-600'
             "
           />
+
+          <!-- Passerelle par défaut (si activée) -->
           <KpiCard
+            v-if="store.pingGateway && store.getCurrentGateway()"
+            label="RTT Passerelle"
+            :value="avgGatewayLatency.toFixed(0)"
+            unit="ms"
+            :sub="`via ${store.getCurrentGateway()}`"
+            icon="ti-router"
+            :value-class="
+              avgGatewayLatency > store.thresholds.latency_ms
+                ? 'text-amber-500'
+                : 'text-green-600'
+            "
+          />
+          <!-- Sinon la 5ème carte reste la perte de paquets -->
+          <KpiCard
+            v-else
             label="Perte paquets"
             :value="avgPacketLoss.toFixed(1)"
             unit="%"
@@ -124,7 +145,8 @@
                 : 'text-green-600'
             "
           />
-          <!-- Placeholder si moins de 2 interfaces -->
+
+          <!-- Placeholders si moins de 2 interfaces -->
           <KpiCard
             v-if="monitoredInterfaces.length < 1"
             label="Aucune interface"
@@ -140,6 +162,21 @@
             unit="ms"
             sub="supplémentaire"
             icon="ti-clock"
+          />
+        </div>
+        <!-- Si la passerelle est activée ET on a déjà les 5 cartes, la perte de paquets peut passer à la ligne suivante -->
+        <div v-if="store.pingGateway && store.getCurrentGateway()" class="mt-3">
+          <KpiCard
+            label="Perte paquets"
+            :value="avgPacketLoss.toFixed(1)"
+            unit="%"
+            sub="toutes interfaces"
+            icon="ti-alert-triangle"
+            :value-class="
+              avgPacketLoss > store.thresholds.packet_loss_pct
+                ? 'text-red-600'
+                : 'text-green-600'
+            "
           />
         </div>
       </div>
@@ -279,9 +316,7 @@ import KpiCard from "../components/layout/KpiCard.vue";
 
 const store = useNetworkStore();
 
-const isDark = computed(() =>
-  document.documentElement.classList.contains("dark"),
-);
+const isDark = computed(() => store.isDark);
 
 const periods = [
   { label: "1 min", value: "1m" },
@@ -313,6 +348,14 @@ const avgPacketLoss = computed(() => {
   return sum / interfaces.length;
 });
 
+const avgGatewayLatency = computed(() => {
+  const latencies = monitoredInterfaces.value
+    .map((iface) => store.gatewayLatency[iface.name]?.avg_ms || 0)
+    .filter((v) => v > 0);
+  if (latencies.length === 0) return 0;
+  return latencies.reduce((a, b) => a + b, 0) / latencies.length;
+});
+
 function qualityBadge(rtt) {
   if (rtt === 0)
     return {
@@ -339,12 +382,35 @@ function qualityBadge(rtt) {
 }
 
 function pingTargetsForInterface(ifaceName) {
-  const lat = store.latency[ifaceName] || { avg_ms: 0 };
-  return store.pingTargets.map((host) => ({
-    host,
-    rtt: lat.avg_ms.toFixed(0),
-    ...qualityBadge(lat.avg_ms),
-  }));
+  const targets = [];
+  // Pour chaque cible configurée
+  store.pingTargets.forEach((host) => {
+    let rtt;
+    let lat;
+    if (host === "8.8.8.8") {
+      // Utiliser la latence principale (mesurée en permanence)
+      lat = store.latency[ifaceName] || { avg_ms: 0 };
+    } else {
+      // Utiliser les résultats des pings supplémentaires
+      lat = store.pingResults[ifaceName]?.[host] || { avg_ms: 0 };
+    }
+    rtt = lat.avg_ms ? lat.avg_ms.toFixed(0) : "—";
+    targets.push({
+      host,
+      rtt,
+      ...qualityBadge(lat.avg_ms),
+    });
+  });
+  // Cible passerelle (si activée)
+  if (store.pingGateway && store.getCurrentGateway()) {
+    const gwLat = store.gatewayLatency[ifaceName] || { avg_ms: 0 };
+    targets.push({
+      host: store.getCurrentGateway(),
+      rtt: gwLat.avg_ms.toFixed(0),
+      ...qualityBadge(gwLat.avg_ms),
+    });
+  }
+  return targets;
 }
 
 const chartOptions = computed(() => ({

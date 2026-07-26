@@ -53,7 +53,14 @@
         <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
           Métriques de {{ ifaceName }}
         </h2>
-        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div
+          class="grid grid-cols-2 gap-3"
+          :class="
+            store.pingGateway && store.getCurrentGateway()
+              ? 'lg:grid-cols-6'
+              : 'lg:grid-cols-5'
+          "
+        >
           <KpiCard
             label="Download"
             :value="bw.download_Mbps.toFixed(1)"
@@ -91,6 +98,20 @@
             :value-class="
               lat.packet_loss_pct > store.thresholds.packet_loss_pct
                 ? 'text-red-600'
+                : 'text-green-600'
+            "
+          />
+          <!-- Passerelle par défaut (si activée) -->
+          <KpiCard
+            v-if="store.pingGateway && store.getCurrentGateway()"
+            label="RTT Passerelle"
+            :value="gwLat.avg_ms.toFixed(0)"
+            unit="ms"
+            :sub="`via ${store.getCurrentGateway()}`"
+            icon="ti-router"
+            :value-class="
+              gwLat.avg_ms > store.thresholds.latency_ms
+                ? 'text-amber-500'
                 : 'text-green-600'
             "
           />
@@ -310,9 +331,9 @@ import UsageBar from "../components/layout/UsageBar.vue";
 
 const store = useNetworkStore();
 const route = useRoute();
-const isDark = computed(() =>
-  document.documentElement.classList.contains("dark"),
-);
+
+// ✅ Utilise la computed réactive du store
+const isDark = computed(() => store.isDark);
 
 // ── Interface courante ───────────────────────────────
 const ifaceName = computed(() => route.params.name);
@@ -331,6 +352,17 @@ const bw = computed(
 const lat = computed(
   () =>
     store.latency[ifaceName.value] ?? {
+      avg_ms: 0,
+      min_ms: 0,
+      max_ms: 0,
+      jitter_ms: 0,
+      packet_loss_pct: 0,
+    },
+);
+// ✅ Latence passerelle pour cette interface
+const gwLat = computed(
+  () =>
+    store.gatewayLatency[ifaceName.value] ?? {
       avg_ms: 0,
       min_ms: 0,
       max_ms: 0,

@@ -38,7 +38,14 @@
         <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
           Aperçu général
         </h2>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div
+          class="grid grid-cols-2 gap-3"
+          :class="
+            store.pingGateway && store.getCurrentGateway()
+              ? 'lg:grid-cols-5'
+              : 'lg:grid-cols-4'
+          "
+        >
           <KpiCard
             label="Débit descendant"
             :value="store.totalDownload.toFixed(1)"
@@ -70,6 +77,21 @@
             "
             :loading="!store.connected && avgLatency === 0"
           />
+          <!-- Passerelle par défaut (si activée) -->
+          <KpiCard
+            v-if="store.pingGateway && store.getCurrentGateway()"
+            label="RTT Passerelle"
+            :value="avgGatewayLatency.toFixed(0)"
+            unit="ms"
+            :sub="`via ${store.getCurrentGateway()}`"
+            icon="ti-router"
+            :value-class="
+              avgGatewayLatency > store.thresholds.latency_ms
+                ? 'text-amber-500'
+                : 'text-green-600'
+            "
+            :loading="!store.connected && avgGatewayLatency === 0"
+          />
           <KpiCard
             label="Perte paquets"
             :value="avgPacketLoss.toFixed(1)"
@@ -87,6 +109,7 @@
       </div>
 
       <!-- Section Graphiques -->
+      <!-- (inchangée) -->
       <div>
         <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
           Graphiques temps réel
@@ -265,7 +288,6 @@ const store = useNetworkStore();
 const bandwidthChart = ref(null);
 const latencyChart = ref(null);
 
-// Couleurs pour les graphiques
 const colors = [
   "#3B82F6",
   "#22C55E",
@@ -275,12 +297,9 @@ const colors = [
   "#EC4899",
 ];
 
-// Dark mode pour ApexCharts
-const isDark = computed(() =>
-  document.documentElement.classList.contains("dark"),
-);
+// ✅ Utilise la détection réactive du store
+const isDark = computed(() => store.isDark);
 
-// Interfaces surveillées
 const monitoredInterfaces = computed(() =>
   store.interfaces.filter((i) => i.monitored),
 );
@@ -302,6 +321,15 @@ const avgPacketLoss = computed(() => {
   return losses.length ? losses.reduce((a, b) => a + b, 0) / losses.length : 0;
 });
 
+// ✅ Latence moyenne vers la passerelle
+const avgGatewayLatency = computed(() => {
+  const latencies = monitoredInterfaces.value
+    .map((iface) => store.gatewayLatency[iface.name]?.avg_ms || 0)
+    .filter((v) => v > 0);
+  if (latencies.length === 0) return 0;
+  return latencies.reduce((a, b) => a + b, 0) / latencies.length;
+});
+
 // Utilisation réseau
 const ifaceUsage = computed(() =>
   monitoredInterfaces.value.map((iface) => {
@@ -319,7 +347,7 @@ const keyMetrics = computed(() => {
   const firstIface = monitoredInterfaces.value[0];
   if (!firstIface) return [];
   const lat = store.latency[firstIface.name] || {};
-  return [
+  const metrics = [
     {
       label: `RTT min (${firstIface.name})`,
       value: `${(lat.min_ms || 0).toFixed(0)} ms`,
@@ -349,9 +377,22 @@ const keyMetrics = computed(() => {
       class: "text-gray-700 dark:text-gray-200",
     },
   ];
+  // ✅ Ajoute la ligne "RTT Passerelle" si activée
+  if (store.pingGateway && store.getCurrentGateway()) {
+    metrics.push({
+      label: `RTT Passerelle (${firstIface.name})`,
+      value: `${(store.gatewayLatency[firstIface.name]?.avg_ms || 0).toFixed(0)} ms`,
+      class:
+        (store.gatewayLatency[firstIface.name]?.avg_ms || 0) >
+        store.thresholds.latency_ms
+          ? "text-amber-500"
+          : "text-gray-700 dark:text-gray-200",
+    });
+  }
+  return metrics;
 });
 
-// ── Disponibilité dynamique ──────────────────────────
+// ── Disponibilité dynamique (inchangée) ──────────────
 const connectionHistory = ref([]);
 const MAX_HISTORY = 100;
 const disconnectionCount = ref(0);

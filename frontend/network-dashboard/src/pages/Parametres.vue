@@ -68,7 +68,7 @@
         </button>
       </div>
 
-      <!-- Contenu des sections (inchangé) -->
+      <!-- Contenu des sections -->
       <div class="flex-1 overflow-auto p-4 md:p-5">
         <!-- ── Collecte ── -->
         <div
@@ -247,6 +247,41 @@
                 <i class="ti ti-alert-circle text-xs"></i> {{ targetError }}
               </p>
             </transition>
+
+            <!-- ✅ Nouveau : option passerelle par défaut -->
+            <div
+              class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4"
+            >
+              <div class="flex items-center justify-between">
+                <div>
+                  <div
+                    class="text-sm text-gray-700 dark:text-gray-200 font-medium"
+                  >
+                    Pinger la passerelle par défaut
+                  </div>
+                  <div class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    Passerelle actuelle :
+                    <span class="font-mono">{{
+                      store.getCurrentGateway() || "—"
+                    }}</span>
+                  </div>
+                </div>
+                <button
+                  class="w-10 h-5 rounded-full transition-colors relative"
+                  :class="
+                    form.pingGateway
+                      ? 'bg-blue-500'
+                      : 'bg-gray-200 dark:bg-gray-600'
+                  "
+                  @click="form.pingGateway = !form.pingGateway"
+                >
+                  <span
+                    class="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
+                    :class="form.pingGateway ? 'left-5' : 'left-0.5'"
+                  ></span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -714,8 +749,9 @@ const form = reactive({
   pingCount: 4,
   collecteActive: true,
   pingTargets: [...store.pingTargets],
+  pingGateway: store.pingGateway, // ← ajouté
   thresholds: { ...store.thresholds },
-  theme: store.theme, // <-- ICI : reflète le thème actuel
+  theme: store.theme,
   unit: "Mbps",
   lang: "fr",
   apiUrl: store.apiUrl,
@@ -800,8 +836,9 @@ function applySettings() {
   store.apiUrl = form.apiUrl;
   store.thresholds = { ...form.thresholds };
   store.pingTargets = [...form.pingTargets];
+  store.pingGateway = form.pingGateway; // ← synchronise l'option
   store.setInterval_(form.interval);
-  store.applyTheme(form.theme); // <-- thème appliqué ici seulement
+  store.applyTheme(form.theme);
   if (!form.collecteActive) {
     store.stopPolling();
   } else {
@@ -812,7 +849,6 @@ function applySettings() {
     saved.value = false;
   }, 3000);
 }
-
 // Confirmée depuis la modale
 function confirmSave() {
   showConfirm.value = false;
@@ -823,9 +859,10 @@ function confirmSave() {
 function resetForm() {
   form.interval = store.interval;
   form.pingTargets = [...store.pingTargets];
+  form.pingGateway = store.pingGateway; // ← restaure
   form.thresholds = { ...store.thresholds };
   form.apiUrl = store.apiUrl;
-  form.theme = store.theme; // <-- restaure le thème actuel
+  form.theme = store.theme;
   form.collecteActive = true;
   form.pingInterval = 5;
   form.pingCount = 4;

@@ -9,15 +9,22 @@
       <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
     </template>
     <template v-else>
-      <div class="text-xs text-gray-400 dark:text-gray-500 mb-1 flex items-center gap-1">
+      <div
+        class="text-xs text-gray-400 dark:text-gray-500 mb-1 flex items-center gap-1"
+      >
         <i :class="`ti ${icon} text-sm`"></i>
         {{ label }}
       </div>
-      <div class="text-xl font-medium tabular-nums transition-all duration-500" :class="valueClass">
+      <div
+        class="text-xl font-medium tabular-nums transition-all duration-500"
+        :class="valueClass"
+      >
         <transition name="num" mode="out-in">
           <span :key="value">{{ value }}</span>
         </transition>
-        <span class="text-xs text-gray-400 dark:text-gray-500 ml-1">{{ unit }}</span>
+        <span class="text-xs text-gray-400 dark:text-gray-500 ml-1">{{
+          unit
+        }}</span>
       </div>
       <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ sub }}</div>
     </template>
@@ -26,20 +33,22 @@
 
 <script setup>
 defineProps({
-  label: { type: String, default: '' },
+  label: { type: String, default: "" },
   value: { type: [String, Number], default: 0 },
-  unit: { type: String, default: '' },
-  sub: { type: String, default: '' },
-  icon: { type: String, default: 'ti-chart-bar' },
-  valueClass: { type: String, default: 'text-gray-800 dark:text-gray-100' },
-  loading: { type: Boolean, default: false }
-})
+  unit: { type: String, default: "" },
+  sub: { type: String, default: "" },
+  icon: { type: String, default: "ti-chart-bar" },
+  valueClass: { type: String, default: "text-gray-800 dark:text-gray-100" },
+  loading: { type: Boolean, default: false },
+});
 </script>
 
 <style scoped>
 .num-enter-active,
 .num-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 .num-enter-from {
   opacity: 0;
